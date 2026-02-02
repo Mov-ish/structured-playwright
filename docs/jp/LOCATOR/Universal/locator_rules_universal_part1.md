@@ -29,3 +29,8 @@ HTML の構造は変化するが、UI の意味（role, name, label, text）は�
 
 Playwright の推奨戦略は DOM を辿るのではなく、意味を基準に Locator を設計することである。
 
+---
+
+**最終更新**: 2026-02-02
+**管理者**: Ray Ishida
+

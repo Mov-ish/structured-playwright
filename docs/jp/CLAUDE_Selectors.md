@@ -493,12 +493,189 @@ Claude.code、CodexCLI、Cursor等がコードレビューする際は、以下�
 
 ## § 6. 新パターン追記エリア
 
-### [日付] - [要素名]
+### 2026-02-02 - フィルターの使い分け（hasNot vs hasNotText）
 
-**発見の経緯**：  
-**試行錯誤**：  
-**セレクタ定義**：  
-**使用例**：  
+**発見の経緯**：
+E2Eテストで「完全削除する」ボタンと「すべて完全削除する」ボタンを区別する必要があった。
+`hasNot`フィルターを使用したが、「すべて完全削除する」ボタンが誤ってクリックされた。
+
+**試行錯誤**：
+1. `filter({ hasNot: page.getByText('すべて完全削除') })` → 失敗（意図通りに除外されない）
+2. `filter({ hasNotText: 'すべて' })` → 成功
+
+**原因**：
+- `hasNot`: **子要素**を持たないことをチェック
+- `hasNotText`: **テキスト**を含まないことをチェック
+
+ボタン自体のテキストで除外したい場合は `hasNotText` を使用する必要がある。
+
+**セレクタ定義**：
+```typescript
+// ❌ 間違い：hasNotは子要素のチェック
+const deleteButton = page
+  .getByRole('button', { name: /完全削除/ })
+  .filter({ hasNot: page.getByText('すべて完全削除') });
+
+// ✅ 正しい：hasNotTextでテキストを除外
+const deleteButton = page
+  .getByRole('button', { name: /完全削除/ })
+  .filter({ hasNotText: 'すべて' });
+```
+
+**使用例**：
+```typescript
+// 「編集」ボタンを選択（「一括編集」を除外）
+const editButton = page
+  .getByRole('button', { name: /編集/ })
+  .filter({ hasNotText: '一括' });
+
+// 「削除」メニュー項目を選択（「完全削除」を除外）
+const deleteMenuItem = page
+  .getByRole('menuitem', { name: /削除/ })
+  .filter({ hasNotText: '完全' });
+```
+
+---
+
+### 2026-02-02 - 正規表現の変更耐性
+
+**発見の経緯**：
+「完全削除する」にマッチする正規表現 `/完全削除する/` を使用したが、UIが「完全に削除」の場合にマッチしなかった。
+
+**試行錯誤**：
+1. `/完全削除する/` → 「完全に削除」にマッチしない
+2. `/完全削除/` + `hasNotText` → 両方に対応
+
+**結論**：
+- 厳密すぎる正規表現はUIテキスト変更に弱い
+- 広いパターン + 除外フィルターが安定
+
+**セレクタ定義**：
+```typescript
+// ❌ 脆弱：厳密すぎる正規表現
+.getByRole('button', { name: /完全削除する/ })
+
+// ✅ 堅牢：広いパターン + 除外フィルター
+.getByRole('button', { name: /完全削除/ })
+.filter({ hasNotText: 'すべて' })
+```
+
+---
+
+### 2026-02-02 - テーブル行のロケーター戦略
+
+**発見の経緯**：
+テストケースで、データテーブルの特定の行にあるellipsisボタンをクリックする必要があった。
+`getByRole('row', { name: ... })` を試したが、行のaccessible nameが期待通りに設定されておらず失敗。
+
+**試行錯誤**：
+1. `getByRole('row', { name: new RegExp(name) })` → 失敗（accessible nameがマッチしない）
+2. `locator('tr').filter({ hasText: name })` → 成功
+
+**原因**：
+- `getByRole('row', { name: ... })` は行のaccessible nameに依存
+- 多くのテーブルではセルにテキストがあっても、行自体にはaccessible nameが設定されていない
+- `filter({ hasText })` はテキスト内容で確実にフィルタリング可能
+
+**セレクタ定義**：
+```typescript
+// ❌ 不安定：accessible nameに依存
+table.getByRole('row', { name: new RegExp(targetText) })
+
+// ✅ 安定：テキスト内容でフィルタリング
+table.locator('tr').filter({ hasText: targetText })
+```
+
+**使用例（テーブル行 + ミートボールメニューパターン）**：
+```typescript
+// データテーブルの特定行を見つけ、その行のellipsisボタンをクリック
+const table = page.locator('table').last();
+const row = table.locator('tr').filter({ hasText: itemName });
+const menuButton = row.getByRole('button', { name: 'ellipsis' });
+await menuButton.click();
+```
+
+**適用場面**：
+- テーブル行内の操作ボタン（編集、削除等）をクリック
+- 特定の行を選択（チェックボックス操作等）
+- 行単位でのデータ検証
+
+---
+
+### 2026-02-02 - Ant Designコンポーネント
+
+**発見の経緯**：
+アプリケーションではAnt Design UIライブラリを使用しており、標準的なセマンティックロケータでは対応できない要素がある。
+
+**Ant Design固有のセレクタ**：
+```typescript
+// モーダル
+page.locator('.ant-modal-content')
+
+// セレクト（ドロップダウン）の選択肢
+page.locator('.ant-select-item-option')
+page.locator('.ant-select-item-option').filter({ hasText: optionText })
+
+// ドロップダウンコンテナ
+page.locator('.ant-select-dropdown')
+
+// テーブル
+page.locator('.ant-table')
+page.locator('.ant-table-row')
+
+// メッセージ/トースト
+page.locator('.ant-message')
+page.locator('.ant-notification')
+```
+
+**定数化の例（constants.ts）**：
+```typescript
+export const SELECTORS = {
+  // Ant Design コンポーネント
+  ANT_MODAL_CONTENT: '.ant-modal-content',
+  ANT_SELECT_OPTION: '.ant-select-item-option',
+  ANT_SELECT_DROPDOWN: '.ant-select-dropdown',
+} as const;
+```
+
+**Ant Designモーダルの操作パターン**：
+```typescript
+// モーダル表示を待つ
+const modal = page.locator(SELECTORS.ANT_MODAL_CONTENT);
+await modal.waitFor({ state: 'visible', timeout: TIMEOUTS.SHORT });
+
+// モーダル内の入力フィールド（Local Universe）
+const input = modal.locator('input[type="text"]').first();
+await input.fill(value);
+
+// モーダル内のボタン（Local Universe）
+const submitButton = modal.getByRole('button', { name: '作成する' });
+await submitButton.click();
+
+// モーダルが閉じるのを待つ
+await modal.waitFor({ state: 'hidden', timeout: TIMEOUTS.DEFAULT });
+```
+
+**Ant Designドロップダウンの操作パターン**：
+```typescript
+// ドロップダウンを開く
+await page.getByRole('combobox').click();
+
+// 選択肢が表示されるまで待つ
+await page.waitForTimeout(TIMEOUTS.SPA_RENDERING);
+
+// 選択肢をクリック
+const option = page.locator(SELECTORS.ANT_SELECT_OPTION).filter({ hasText: targetName }).first();
+await option.click();
+
+// ドロップダウンを閉じる（Escapeキー）
+await page.keyboard.press('Escape');
+await page.waitForTimeout(TIMEOUTS.DROPDOWN_ANIMATION);
+```
+
+**注意事項**：
+- Ant Designのクラス名はバージョンアップで変更される可能性がある
+- 可能な限りセマンティックロケータを優先し、Ant Design固有セレクタは補助的に使用
 
 ---
 
@@ -508,5 +685,5 @@ MIT License
 
 ---
 
-**最終更新**: 2026-01-13
-**管理者**: QA Team
+**最終更新**: 2026-02-02
+**管理者**: Ray Ishida

@@ -294,6 +294,7 @@ export class CoursePage {
 import { Page } from '@playwright/test';
 import { BaseAction } from './BaseAction';
 import { XxxPage } from '../pages/XxxPage';
+import { TIMEOUTS } from '../config/constants';  // ← 必須インポート
 
 /**
  * [機能名]のActionクラス
@@ -327,7 +328,8 @@ export class XxxAction extends BaseAction {
 
     console.log('ステップ2: YYY');
     await this.yyyPage.doSomethingElse();
-    await this.page.waitForTimeout(1000);
+    // SPAのレンダリング完了を待つ（理由コメント必須）
+    await this.page.waitForTimeout(TIMEOUTS.MODAL_ANIMATION);  // ← 定数使用
 
     console.log('ステップ3: 完了確認');
     // ...
@@ -413,8 +415,9 @@ await this.page.waitForFunction(() => {
   return document.querySelectorAll('.course-item').length > 0;
 });
 
-// ⚠️ 避けるべき：固定時間待機（最終手段）
-await this.page.waitForTimeout(1000);
+// ⚠️ 避けるべき：固定時間待機（最終手段、使用時は定数+コメント必須）
+// モーダルアニメーション完了を待つ
+await this.page.waitForTimeout(TIMEOUTS.MODAL_ANIMATION);
 ```
 
 ### 4.4 エラーハンドリング
@@ -871,3 +874,5 @@ MIT License
 
 - 文書ID: TECH-STD-E2E-001
 - 分類: 技術標準
+- 最終更新: 2026-02-02
+- 管理者: Ray Ishida

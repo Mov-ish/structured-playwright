@@ -1339,3 +1339,8 @@ row.locator('button:has(svg[data-icon="delete"])');
 
 これらを統合することで、
 UI が変わっても壊れにくい "長寿命 E2E テスト" を構築できる。
+
+---
+
+**最終更新**: 2026-02-02
+**管理者**: Ray Ishida
