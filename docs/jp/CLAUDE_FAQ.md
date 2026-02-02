@@ -721,4 +721,4 @@ MIT License
 ---
 
 **最終更新**: 2026-01-13  
-**管理者**: QA Team
+**管理者**: Ray Ishida

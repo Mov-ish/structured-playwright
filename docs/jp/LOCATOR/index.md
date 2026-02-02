@@ -92,3 +92,8 @@ Universal と Product-Specific の両方を統合し、
 
 # ✨ Index 完成
 この Index を GitHub に置くことで、Locator 文書体系は **完全に探索可能 / 参照可能** になる。
+
+---
+
+**最終更新**: 2026-02-02
+**管理者**: Ray Ishida

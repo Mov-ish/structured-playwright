@@ -1,6 +1,6 @@
 # CLAUDE_Patterns.md - 実装パターン・成功事例集
 
-**最終更新**: 2025-11-06
+**最終更新**: 2026-02-02
 
 ---
 
@@ -536,16 +536,81 @@ async clickWithRetry(locator: Locator, maxRetries: number = 3): Promise<void> {
 
 ## § 6. 新パターン追記エリア
 
-### [日付] - [パターン名]
+### 2026-02-02 - 確認ダイアログの待機パターン
 
-**実装背景**：  
-**成功要因**：  
-**コード例**：  
-**注意点**：  
+**実装背景**：
+削除ボタンクリック後、確認ダイアログが表示される前に「削除する」ボタンを探してタイムアウトが発生した。
+
+**成功要因**：
+ボタンクリック後、確認ダイアログ内のボタンが表示されるまで明示的に待機する。
+
+**コード例**：
+```typescript
+// ❌ 悪い例：ダイアログ表示を待たない
+await deleteButton.click();
+await this.page.waitForTimeout(TIMEOUTS.UI_RESPONSE);
+await this.confirmDeleteButton.click(); // タイムアウトする可能性
+
+// ✅ 良い例：確認ダイアログの表示を待つ
+await deleteButton.click();
+await this.confirmDeleteButton.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
+await this.confirmDeleteButton.click();
+```
+
+**注意点**：
+- `waitForTimeout`だけでは不安定（ダイアログ表示のタイミングが環境により異なる）
+- `waitFor({ state: 'visible' })`で確実に表示を待つ
+
+---
+
+### 2026-02-02 - 削除後のリスト変化確認パターン
+
+**実装背景**：
+SPAでリスト項目が削除された後、その変化を確認しようとしたが、要素参照が無効になり失敗した。
+
+**試行錯誤**：
+1. `waitFor({ state: 'hidden' })` → ❌ 要素がDOMから削除されるため失敗
+2. `waitFor({ state: 'detached' })` → ❌ DOM依存で不安定
+3. `expect().toHaveCount(0)` → ❌ 削除済みタブでは動作せず
+4. タブ遷移で確認 → ❌ タブ要素取得が不安定
+5. **URL遷移確認** → ✅ 安定して動作
+
+**成功要因**：
+削除操作後、期待するURLに遷移することを確認する。
+
+**コード例**：
+```typescript
+// ❌ 不安定：要素の消失を直接確認
+await this.confirmDeleteButton.click();
+await itemRow.waitFor({ state: 'hidden', timeout: TIMEOUTS.DEFAULT }); // 失敗
+
+// ✅ 安定：URL遷移で削除完了を確認
+await this.confirmDeleteButton.click();
+await this.page.waitForURL('**/admin/items?tab=archive', { timeout: TIMEOUTS.DEFAULT });
+```
+
+**注意点**：
+- SPAではリスト項目削除時に要素がDOMから完全に削除される
+- 元のLocator参照が無効になるため、`hidden`や`detached`では確認できない
+- URL遷移やネットワーク完了で間接的に確認するのが安定
+
+**代替パターン（クリーンアップ時）**：
+削除処理自体が目的の場合（クリーンアップ等）、厳密な確認は省略可能：
+```typescript
+await this.confirmDeleteButton.click();
+// 削除処理のレスポンスを待つ（短いタイムアウトで十分）
+await this.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
+  console.log('削除完了: networkidle待機タイムアウト（処理は完了済み）');
+});
+```
 
 ---
 
 ## § 7. パターン改善ログ
+
+### 2026-02-02
+- 確認ダイアログの待機パターンを追加
+- 削除後のリスト変化確認パターンを追加
 
 ### 2025-11-06
 - 初版作成
@@ -553,5 +618,5 @@ async clickWithRetry(locator: Locator, maxRetries: number = 3): Promise<void> {
 
 ---
 
-**最終更新**: 2025-11-06  
-**管理者**: QA Team
+**最終更新**: 2026-02-02  
+**管理者**: Ray Ishida

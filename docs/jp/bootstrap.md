@@ -98,3 +98,8 @@ npm test
 環境が動いたら、テスト追加はこの文書へ：
 
 - **TEST_CREATION_PROTOCOL.md**
+
+---
+
+**最終更新**: 2026-02-02
+**管理者**: Ray Ishida
