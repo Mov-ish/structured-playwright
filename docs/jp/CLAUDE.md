@@ -251,6 +251,8 @@ await expect(page.locator('[role="alert"]')).toContainText('エラーメッセ�
 | `.first()`の安易な使用 | 保守性低下 | 具体的なセレクタ、`:near()` | CLAUDE_Selectors.md §3 |
 | `text=`ロケータ | このプロジェクトで動作しない | CSSセレクタ + :has-text() | §ロケータ戦略ルール |
 | 意味層の薄い要素へのセマンティックロケータ | 属性が不足 | `:near()`、`svg[data-icon]` | §ロケータ戦略ルール |
+| `@playwright/test`から直接`test`をインポート | Fixture未経由で結合度が高い | Fixtureファイルからインポート | E2ETest_Framework.md §10 |
+| Actionを手動で`new`する | 依存が明示されない | Fixture引数で受け取る | E2ETest_Framework.md §10 |
 
 ---
 
@@ -368,7 +370,8 @@ await expect(page.locator('h1:has-text("ダッシュボード")')).toBeVisible()
 テスト終了後、作成したデータは必ずクリーンアップすること。
 
 ```typescript
-test('新規グループ作成テスト', async ({ page }) => {
+// ✅ Fixture経由でActionを受け取る
+test('新規グループ作成テスト', async ({ createGroupAction, deleteGroupAction, page }) => {
   // Arrange
   const groupName = `テストグループ_${Date.now()}`;
 
@@ -386,9 +389,9 @@ test('新規グループ作成テスト', async ({ page }) => {
 または、`test.afterEach`を活用：
 
 ```typescript
-test.afterEach(async ({ page }) => {
+test.afterEach(async ({ cleanupAction }) => {
   // テスト後のクリーンアップ処理
-  await cleanupTestData();
+  await cleanupAction.execute();
 });
 ```
 
@@ -406,6 +409,8 @@ src/
 │   └── DashboardPage.ts
 ├── actions/         # Layer 2: Actions
 │   └── LoginAction.ts
+├── fixtures/        # Fixture定義（Test層のインフラ）
+│   └── app.fixture.ts
 └── tests/           # Layer 3: Tests
     └── scenarios/
         └── login.spec.ts
@@ -450,9 +455,12 @@ npm run report              # HTML レポート表示
 - [ ] 適切な待機処理（`waitForTimeout`は最小化＋コメント必須）
 - [ ] コンソールログで進行状況を出力
 - [ ] エラーハンドリング実装
+- [ ] **新規Actionの場合、Fixtureファイルに登録する**
 
 ### Test 作成時
 
+- [ ] Fixtureファイルから `test`/`expect` をインポート（`@playwright/test`直接は禁止）
+- [ ] Actionは手動 `new` せずFixture引数で受け取る
 - [ ] AAA（Arrange-Act-Assert）パターンに従う
 - [ ] 環境変数から認証情報を取得
 - [ ] ロケータ優先順位に従った検証
@@ -481,6 +489,8 @@ npm run report              # HTML レポート表示
    - 状態ベースの待機を使用しているか
 
 4. **テスト品質**
+   - Fixtureファイルから `test`/`expect` をインポートしているか（`@playwright/test`直接は禁止）
+   - Actionを手動 `new` せずFixture引数で受け取っているか
    - 結果検証が実装されているか
    - データクリーンアップが実装されているか
    - テストが実行可能か（動作確認済みか）
@@ -505,6 +515,8 @@ npm run report              # HTML レポート表示
 - [ ] **LoginActionはログイン成功検証を実装**（必須）
 
 ### Test 作成時
+- [ ] **Fixtureファイルから `test`/`expect` をインポート**（必須）
+- [ ] **Actionは手動 `new` せずFixture引数で受け取る**（必須）
 - [ ] AAAパターンに従う
 - [ ] 環境変数から認証情報を取得
 - [ ] 結果検証を実施

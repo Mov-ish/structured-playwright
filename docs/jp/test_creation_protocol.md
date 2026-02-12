@@ -26,6 +26,10 @@ import { SELECTORS } from '../config/constants';
 
 // Action では追加で
 import { URL_PATTERNS } from '../config/constants';
+
+// Test では必須（Fixture経由）
+import { test, expect } from '../fixtures/app.fixture';
+// ❌ 禁止: import { test, expect } from '@playwright/test';
 ```
 
 ### Page Object のルール
@@ -41,6 +45,12 @@ import { URL_PATTERNS } from '../config/constants';
 | URL待機 | `waitForURL('**/login**')` | `waitForURL(URL_PATTERNS.LOGIN)` |
 | ログ出力 | 開始・終了のみ | 各ステップで `console.log('Step N: ...')` |
 | LoginAction | 検証なし | ログイン成功検証を実装 |
+
+### Test のルール
+| ルール | ❌ 禁止 | ✅ 必須 |
+|--------|--------|--------|
+| import元 | `from '@playwright/test'` | `from '../fixtures/app.fixture'` |
+| Action取得 | `new XxxAction(page)` | Fixture引数 `async ({ xxxAction }) =>` |
 
 ### ロケータのルール
 | ルール | ❌ 禁止 | ✅ 必須 |
@@ -97,6 +107,7 @@ Locator に迷ったら、必ず以下の順で参照し、判断を止める：
 
 ## 4層アーキテクチャの責務（簡約）
 - **Test（Scenario）**：意図・期待結果を書く。Locatorを直接書かない
+- **Fixture**：Actionのインスタンス化を一元管理。TestがActionを直接newしない
 - **Actions（手順）**：ユーザ行動のまとまり（再利用単位）
 - **PageObject**：画面要素・操作のカプセル化（Locatorはここ）
 - **Data / Config**：テストデータ・環境差分・認証情報（envなど）
@@ -124,6 +135,7 @@ Locator に迷ったら、必ず以下の順で参照し、判断を止める：
 ### 3) 追加ファイルを決める（最小追加）
 - 既存で足りるなら Test だけ追加
 - 足りない部分のみ Actions / PageObject を追加 or 拡張
+- **新規Actionを追加した場合はFixtureファイルにも登録する**
 - Locator は `./LOCATOR` のルールに従う
 
 ### 4) 命名と配置
@@ -151,6 +163,7 @@ Locator に迷ったら、必ず以下の順で参照し、判断を止める：
 > TEST_CREATION_PROTOCOL.md に従って、以下のユーザーストーリーでE2Eテストを追加して。
 > **MUSTチェックリストを確認し、ルール違反がないことを確認すること。**
 > 既存のActions/PageObjectをまず探して再利用し、足りない部分だけ追加して。
+> テストファイルではFixture経由でActionを取得すること（`@playwright/test`から直接importしない）。
 
 - 対象機能：
 - ユーザーストーリー：

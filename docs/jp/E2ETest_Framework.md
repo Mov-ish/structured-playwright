@@ -31,7 +31,8 @@
 7. [命名規則](#7-命名規則)
 8. [コーディング規約](#8-コーディング規約)
 9. [エラーハンドリング](#9-エラーハンドリング)
-10. [テストデータ管理](#10-テストデータ管理)
+10. [Fixture定義](#10-fixture定義)
+11. [テストデータ管理](#11-テストデータ管理)
 
 ---
 
@@ -109,7 +110,8 @@ e2e-tests/
 │   │   │   └── login-smoke.spec.ts
 │   │   └── regression/              # リグレッションテスト
 │   │       └── critical-path.spec.ts
-│   ├── fixtures/                    # テストデータ
+│   ├── fixtures/                    # Playwright Fixture定義 + テストデータ
+│   │   ├── app.fixture.ts          # Fixture定義（Action注入）
 │   │   ├── users.json
 │   │   └── courses.json
 │   └── utils/                       # ユーティリティ
@@ -134,7 +136,8 @@ e2e-tests/
 | **Action** | `{機能名}Action.ts` | `LoginAction.ts` |
 | **Test** | `{テスト対象}.spec.ts` | `user-journey.spec.ts` |
 | **Config** | `{設定種別}.ts` | `env.ts` |
-| **Fixture** | `{データ種別}.json` | `users.json` |
+| **Fixture定義** | `{スコープ名}.fixture.ts` | `app.fixture.ts` |
+| **Fixtureデータ** | `{データ種別}.json` | `users.json` |
 
 ---
 
@@ -311,6 +314,7 @@ export class XxxAction extends BaseAction {
   private xxxPage: XxxPage;
   private yyyPage: YyyPage;
 
+  // NOTE: Fixtureからインスタンス化されるため、引数はpageのみとする
   constructor(page: Page) {
     super(page, 'アクション名（日本語）');
     this.xxxPage = new XxxPage(page);
@@ -449,30 +453,33 @@ async execute(email: string, password: string): Promise<void> {
 ### 5.1 基本構造
 
 ```typescript
-import { test, expect } from '@playwright/test';
-import { XxxAction } from '../actions/XxxAction';
-import { XxxPage } from '../pages/XxxPage';
+// ✅ 必須：Fixtureファイルから test/expect をインポート
+import { test, expect } from '../fixtures/app.fixture';
 import { EnvConfig } from '../config/env';
 
 test.describe('テストスイート名', () => {
 
-  test('テストケース名（具体的に）', async ({ page }) => {
+  // ✅ 必須：使用するActionのみをFixture経由で受け取る
+  test('テストケース名（具体的に）', async ({ xxxAction, page }) => {
     // 準備（Arrange）
     const env = EnvConfig.getTestEnvironment();
-    await page.goto(`${env.baseUrl}/xxx`);
 
     // 実行（Act）
-    const action = new XxxAction(page);
-    await action.execute(param1, param2);
+    await xxxAction.execute(param1, param2);
 
     // 検証（Assert）
-    const xxxPage = new XxxPage(page);
-    expect(await xxxPage.isSuccess()).toBeTruthy();
+    expect(await xxxAction.isSuccess()).toBeTruthy();
     expect(page.url()).toContain('/success');
   });
 
 });
 ```
+
+**Fixtureルール（MUST）**
+- ❌ `import { test, expect } from '@playwright/test'` は**禁止**（Fixtureを経由すること）
+- ❌ `const action = new XxxAction(page)` は**禁止**（Fixture経由で受け取ること）
+- ✅ `import { test, expect } from '../fixtures/app.fixture'` が**必須**
+- ✅ テスト関数の引数で必要なActionのみを宣言する
 
 ### 5.2 Test 作成ガイドライン
 
@@ -777,7 +784,8 @@ async executeWithRetry(maxRetries: number = 3): Promise<void> {
     } catch (error) {
       if (i === maxRetries - 1) throw error;
       console.log(`リトライ ${i + 1}/${maxRetries}`);
-      await this.page.waitForTimeout(1000);
+      // リトライ前の待機
+      await this.page.waitForTimeout(TIMEOUTS.MODAL_ANIMATION);
     }
   }
 }
@@ -785,9 +793,79 @@ async executeWithRetry(maxRetries: number = 3): Promise<void> {
 
 ---
 
-## 10. テストデータ管理
+## 10. Fixture定義
 
-### 10.1 Fixtureの使用
+### 10.1 Fixtureの役割
+
+FixtureはTest層とAction層の**接続を一元管理**する仕組みである。
+Playwright の `test.extend()` を使い、Actionのインスタンス化をFixtureに集約する。
+
+4層アーキテクチャにおけるFixtureの位置づけ:
+```
+Layer 3: Tests ─── Fixtureからtest/expectをimport、Actionを引数で受け取る
+                    │
+              [Fixture定義] ← Actionのインスタンス化を一元管理
+                    │
+Layer 2: Actions ── page を受け取って動作する（Fixture の存在を意識しない）
+```
+
+Fixtureは新しい層ではなく、**Test層のインフラ**（import/インスタンス化の仕組み）として機能する。
+
+### 10.2 Fixture定義の基本構造
+
+```typescript
+// fixtures/app.fixture.ts
+import { test as base } from '@playwright/test';
+import { LoginAction } from '../actions/LoginAction';
+import { XxxAction } from '../actions/XxxAction';
+import { YyyAction } from '../actions/YyyAction';
+
+// Fixtureで提供するActionの型定義
+type AppFixtures = {
+  loginAction: LoginAction;
+  xxxAction: XxxAction;
+  yyyAction: YyyAction;
+};
+
+// test.extend() でActionを登録
+export const test = base.extend<AppFixtures>({
+  loginAction: async ({ page }, use) => {
+    await use(new LoginAction(page));
+  },
+  xxxAction: async ({ page }, use) => {
+    await use(new XxxAction(page));
+  },
+  yyyAction: async ({ page }, use) => {
+    await use(new YyyAction(page));
+  },
+});
+
+export { expect } from '@playwright/test';
+```
+
+### 10.3 Fixture作成ガイドライン
+
+**必須事項**
+- ✅ 全ActionクラスをFixtureに登録する
+- ✅ `export { expect } from '@playwright/test'` を必ず含める
+- ✅ 型定義（`AppFixtures`）で提供するActionを明示する
+- ✅ Actionのコンストラクタは `page` のみを引数にとる
+
+**禁止事項**
+- ❌ Fixture内にビジネスロジックを含めない
+- ❌ Fixture内でActionのメソッドを呼び出さない（インスタンス化のみ）
+- ❌ テストファイルで `@playwright/test` から直接 `test` をインポートしない
+
+**新規Action追加時の手順**
+1. Actionクラスを `actions/` に作成
+2. Fixture定義ファイルにimportと登録を追加
+3. テストファイルで引数として宣言して使用
+
+---
+
+## 11. テストデータ管理
+
+### 11.1 Fixtureデータの使用
 
 ```typescript
 // fixtures/users.json
@@ -803,15 +881,15 @@ async executeWithRetry(maxRetries: number = 3): Promise<void> {
 }
 
 // テストでの使用
+import { test, expect } from '../fixtures/app.fixture';
 import users from '../fixtures/users.json';
 
-test('有効なユーザーでログイン', async ({ page }) => {
-  const loginAction = new LoginAction(page);
+test('有効なユーザーでログイン', async ({ loginAction }) => {
   await loginAction.execute(users.validUser.email, users.validUser.password);
 });
 ```
 
-### 10.2 テストデータ生成
+### 11.2 テストデータ生成
 
 ```typescript
 // utils/testDataGenerator.ts

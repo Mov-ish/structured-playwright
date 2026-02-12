@@ -31,10 +31,13 @@ src/
 ├─ tests/ # シナリオ（意図と期待結果のみを書く）
 ├─ actions/ # ユーザ操作の流れ（Actions）
 ├─ pages/ # 画面要素と操作（PageObject / Locatorはここ）
+├─ fixtures/ # Fixture定義（Test層とAction層の接続）
+│ └─ app.fixture.ts
 └─ config/ # 環境差分・設定・テストデータ
 
 ## 各層の責務（要約）
 - **tests**: テストの意図・期待結果を記述する。ロジックやLocatorを書かない
+- **fixtures**: Actionのインスタンス化を一元管理する。Testは `@playwright/test` からではなくFixtureから `test`/`expect` をインポートする
 - **actions**: 複数操作をまとめた再利用可能な手順
 - **pages**: 画面構造と操作をカプセル化する（Locatorはこの層に限定）
 - **config**: 環境差分・認証情報（`.env` 経由）・固定データ
@@ -71,16 +74,24 @@ npx playwright install --with-deps
 
 > 4層アーキテクチャのディレクトリ指針は **E2ETest_Framework.md** を正とする。
 
-### 4) smoke test を 1 本用意
+### 4) Fixture ファイルを用意
+テストからActionを注入するためのFixtureファイルを作成する。
+
+例：`src/fixtures/app.fixture.ts`
+
+詳細は **E2ETest_Framework.md §10** を参照。
+
+### 5) smoke test を 1 本用意
 目的：環境が正しく動くことの確認。
 
 例：`src/tests/smoke/smoke.spec.ts`
 
+- Fixtureから `test`/`expect` をインポート（`@playwright/test` 直接は禁止）
 - 1ページアクセス
 - 1つの確実な要素検証
 - 必要ならログイン（env から）
 
-### 5) 実行確認
+### 6) 実行確認
 ```bash
 npm test
 ```

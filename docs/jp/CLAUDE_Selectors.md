@@ -1,6 +1,6 @@
 # CLAUDE_Selectors.md - セレクタ戦略・パターン集
 
-**最終更新**: 2026-01-13
+**最終更新**: 2026-02-12
 
 ---
 
@@ -496,12 +496,12 @@ Claude.code、CodexCLI、Cursor等がコードレビューする際は、以下�
 ### 2026-02-02 - フィルターの使い分け（hasNot vs hasNotText）
 
 **発見の経緯**：
-E2Eテストで「完全削除する」ボタンと「すべて完全削除する」ボタンを区別する必要があった。
-`hasNot`フィルターを使用したが、「すべて完全削除する」ボタンが誤ってクリックされた。
+E2Eテストで「削除」ボタンと「一括削除」ボタンを区別する必要があった。
+`hasNot`フィルターを使用したが、「一括削除」ボタンが誤ってクリックされた。
 
 **試行錯誤**：
-1. `filter({ hasNot: page.getByText('すべて完全削除') })` → 失敗（意図通りに除外されない）
-2. `filter({ hasNotText: 'すべて' })` → 成功
+1. `filter({ hasNot: page.getByText('一括削除') })` → 失敗（意図通りに除外されない）
+2. `filter({ hasNotText: '一括' })` → 成功
 
 **原因**：
 - `hasNot`: **子要素**を持たないことをチェック
@@ -513,13 +513,13 @@ E2Eテストで「完全削除する」ボタンと「すべて完全削除す�
 ```typescript
 // ❌ 間違い：hasNotは子要素のチェック
 const deleteButton = page
-  .getByRole('button', { name: /完全削除/ })
-  .filter({ hasNot: page.getByText('すべて完全削除') });
+  .getByRole('button', { name: /削除/ })
+  .filter({ hasNot: page.getByText('一括削除') });
 
 // ✅ 正しい：hasNotTextでテキストを除外
 const deleteButton = page
-  .getByRole('button', { name: /完全削除/ })
-  .filter({ hasNotText: 'すべて' });
+  .getByRole('button', { name: /削除/ })
+  .filter({ hasNotText: '一括' });
 ```
 
 **使用例**：
@@ -529,10 +529,10 @@ const editButton = page
   .getByRole('button', { name: /編集/ })
   .filter({ hasNotText: '一括' });
 
-// 「削除」メニュー項目を選択（「完全削除」を除外）
-const deleteMenuItem = page
-  .getByRole('menuitem', { name: /削除/ })
-  .filter({ hasNotText: '完全' });
+// 「保存」ボタンを選択（「すべて保存」を除外）
+const saveButton = page
+  .getByRole('button', { name: /保存/ })
+  .filter({ hasNotText: 'すべて' });
 ```
 
 ---
@@ -540,11 +540,11 @@ const deleteMenuItem = page
 ### 2026-02-02 - 正規表現の変更耐性
 
 **発見の経緯**：
-「完全削除する」にマッチする正規表現 `/完全削除する/` を使用したが、UIが「完全に削除」の場合にマッチしなかった。
+「削除する」にマッチする正規表現 `/削除する/` を使用したが、UIが「削除」のみの場合にマッチしなかった。
 
 **試行錯誤**：
-1. `/完全削除する/` → 「完全に削除」にマッチしない
-2. `/完全削除/` + `hasNotText` → 両方に対応
+1. `/削除する/` → 「削除」にマッチしない
+2. `/削除/` + `hasNotText` → 両方に対応
 
 **結論**：
 - 厳密すぎる正規表現はUIテキスト変更に弱い
@@ -553,11 +553,11 @@ const deleteMenuItem = page
 **セレクタ定義**：
 ```typescript
 // ❌ 脆弱：厳密すぎる正規表現
-.getByRole('button', { name: /完全削除する/ })
+.getByRole('button', { name: /削除する/ })
 
 // ✅ 堅牢：広いパターン + 除外フィルター
-.getByRole('button', { name: /完全削除/ })
-.filter({ hasNotText: 'すべて' })
+.getByRole('button', { name: /削除/ })
+.filter({ hasNotText: '一括' })
 ```
 
 ---
@@ -588,9 +588,9 @@ table.locator('tr').filter({ hasText: targetText })
 
 **使用例（テーブル行 + ミートボールメニューパターン）**：
 ```typescript
-// データテーブルの特定行を見つけ、その行のellipsisボタンをクリック
+// ユーザーテーブルの特定行を見つけ、その行のメニューボタンをクリック
 const table = page.locator('table').last();
-const row = table.locator('tr').filter({ hasText: itemName });
+const row = table.locator('tr').filter({ hasText: userName });
 const menuButton = row.getByRole('button', { name: 'ellipsis' });
 await menuButton.click();
 ```
@@ -605,7 +605,7 @@ await menuButton.click();
 ### 2026-02-02 - Ant Designコンポーネント
 
 **発見の経緯**：
-アプリケーションではAnt Design UIライブラリを使用しており、標準的なセマンティックロケータでは対応できない要素がある。
+Ant Design UIライブラリを使用するアプリケーションでは、標準的なセマンティックロケータでは対応できない要素がある。
 
 **Ant Design固有のセレクタ**：
 ```typescript
