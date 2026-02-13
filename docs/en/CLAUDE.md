@@ -319,7 +319,7 @@ await expect.poll(async () => {
   return count;
 }, {
   timeout: 10000,
-  message: 'アイテム数が期待値に達しませんでした'
+  message: 'Item count did not reach expected value'
 }).toBeGreaterThan(0);
 ```
 
@@ -371,6 +371,7 @@ After test completion, created data MUST be cleaned up.
 
 ```typescript
 // ✅ Receive Actions via Fixture
+// Note: Test names and test data are in Japanese because the target application has a Japanese UI
 test('新規グループ作成テスト', async ({ createGroupAction, deleteGroupAction, page }) => {
   // Arrange
   const groupName = `テストグループ_${Date.now()}`;
