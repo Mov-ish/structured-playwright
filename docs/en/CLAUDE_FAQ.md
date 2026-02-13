@@ -38,7 +38,7 @@ Error: locator.click: Timeout 30000ms exceeded
 #### Cause
 - **Elements with minimal semantic layer** lack attributes like `aria-label`, `label`
 - Especially: checkboxes without labels, icon-only buttons
-- **However**, **elements with thick semantic layer** like modals, buttons with text, input fields with placeholder CAN use semantic locators
+- **However**, **elements with rich semantic layer** like modals, buttons with text, input fields with placeholder CAN use semantic locators
 
 #### Solution
 **Elements with minimal semantic layer** → Use CSS selector + `:near()` or `svg[data-icon]`
@@ -56,7 +56,7 @@ import { SELECTORS } from '../config/constants';
 page.locator(SELECTORS.AGREEMENT_CHECKBOX)
 ```
 
-**Elements with thick semantic layer** → Semantic locators available
+**Elements with rich semantic layer** → Semantic locators available
 
 ```typescript
 // ✅ Works: Modal
@@ -647,7 +647,7 @@ Concept indicating how much semantic information (meaningful identifiers) HTML e
 - **Judge semantic layer thickness for each element and select appropriate Locator**
 
 **Solutions**:
-1. **Elements with thick semantic layer** → Prioritize semantic locators
+1. **Elements with rich semantic layer** → Prioritize semantic locators
 2. **Elements with minimal semantic layer** → Use `:near()` selector or `svg[data-icon]`
 3. **Both cases** → Narrow scope with parent element (Local Universe)
 

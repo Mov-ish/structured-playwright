@@ -76,7 +76,7 @@ page.getByPlaceholder('検索')
 page.getByPlaceholder('メールアドレスを入力')
 ```
 
-**Use**: Elements with thick semantic layer (role, name, placeholder set)
+**Use**: Elements with rich semantic layer (role, name, placeholder set)
 
 #### ✅ Recommended Pattern 2: :has-text() / :text-is()
 
