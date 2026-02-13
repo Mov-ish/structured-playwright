@@ -1022,6 +1022,16 @@ Background:
 
 → **Neither structure nor semantic, but "text proximity" becomes the most stable anchor.**
 
+#### Cases Where near() Should Be Actively Adopted
+
+- Checkboxes
+- Radio buttons
+- Input fields where label and form are not linked
+- UI where multiple buttons exist within a group
+- Components with highly fluctuating DOM
+
+Especially for UI like **checkboxes and radio buttons** where "the element itself has no meaning," near() demonstrates the highest stability.
+
 ### 2.2 Confine Modals to role="dialog"
 
 In UI with minimal semantic layer:
