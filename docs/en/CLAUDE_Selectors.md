@@ -197,6 +197,78 @@ export const SELECTORS = {
 } as const;
 ```
 
+### 2.2 Currently Defined Selectors
+
+#### Common Elements
+
+```typescript
+export const SELECTORS = {
+  // Modal
+  MODAL: '[role="dialog"]',
+  
+  // Button
+  SUBMIT_BUTTON: 'button[type="submit"]',
+  
+  // Other common elements
+  // ...
+} as const;
+```
+
+#### Auth0 Related
+
+```typescript
+// Auth0 login page
+AUTH0_EMAIL_INPUT: 'input[name="username"]',
+AUTH0_PASSWORD_INPUT: 'input[name="password"]',
+AUTH0_SUBMIT_BUTTON: 'button[type="submit"], button:has-text("続ける"), button:has-text("ログイン")',
+```
+
+#### Agreement Checkbox Related
+
+```typescript
+// Agreement checkbox (identified from surrounding text with :near())
+AGREEMENT_CHECKBOX: 'input[type="checkbox"]:near(:text("同意する"))',
+```
+
+#### Modal Internal Elements
+
+```typescript
+// Confirmation checkbox
+CONFIRM_CHECKBOX: '[role="dialog"] input[type="checkbox"]:near(:text("下記事項を確認"))',
+
+// Nominated course button
+NOMINATED_COURSE_BUTTON: '[role="dialog"] button:has-text("指名コース")',
+```
+
+---
+
+### 2.3 Guidelines for Adding New Selectors
+
+When adding new selector patterns, record them in the following format:
+
+```markdown
+### [Date Added] - [Element Name]
+
+**Discovery Context**:
+- Which test required it
+- Why this selector was needed
+
+**Trial and Error**:
+- First attempted selector → Reason for failure
+- Next attempted selector → Reason for failure
+- Finally adopted selector → Reason for success
+
+**Selector Definition**:
+```typescript
+ELEMENT_NAME: 'selector',
+```
+
+**Usage Example**:
+```typescript
+page.locator(SELECTORS.ELEMENT_NAME)
+```
+```
+
 ---
 
 ## § 3. `.first()` Usage Rules
@@ -448,6 +520,44 @@ const deleteButton = page
   .filter({ hasNotText: '一括' });
 ```
 
+**Usage Examples**:
+```typescript
+// Select "Edit" button (excluding "Bulk Edit")
+const editButton = page
+  .getByRole('button', { name: /編集/ })
+  .filter({ hasNotText: '一括' });
+
+// Select "Save" button (excluding "Save All")
+const saveButton = page
+  .getByRole('button', { name: /保存/ })
+  .filter({ hasNotText: 'すべて' });
+```
+
+---
+
+### 2026-02-02 - Regex Change Resistance
+
+**Discovery Context**:
+Used regex `/削除する/` to match "削除する" (Delete), but didn't match when UI showed only "削除".
+
+**Trial and Error**:
+1. `/削除する/` → Doesn't match "削除"
+2. `/削除/` + `hasNotText` → Handles both cases
+
+**Conclusion**:
+- Overly strict regex is fragile against UI text changes
+- Broader pattern + exclusion filter is stable
+
+**Selector Definition**:
+```typescript
+// ❌ Fragile: Too strict regex
+.getByRole('button', { name: /削除する/ })
+
+// ✅ Robust: Broad pattern + exclusion filter
+.getByRole('button', { name: /削除/ })
+.filter({ hasNotText: '一括' })
+```
+
 ---
 
 ### 2026-02-02 - Table Row Locator Strategy
@@ -482,6 +592,11 @@ const row = table.locator('tr').filter({ hasText: userName });
 const menuButton = row.getByRole('button', { name: 'ellipsis' });
 await menuButton.click();
 ```
+
+**Applicable Scenarios**:
+- Click operation buttons within table rows (edit, delete, etc.)
+- Select specific rows (checkbox operations, etc.)
+- Data validation at row level
 
 ---
 
@@ -519,6 +634,41 @@ export const SELECTORS = {
   ANT_SELECT_OPTION: '.ant-select-item-option',
   ANT_SELECT_DROPDOWN: '.ant-select-dropdown',
 } as const;
+```
+
+**Ant Design Modal Operation Pattern**:
+```typescript
+// Wait for modal to appear
+const modal = page.locator(SELECTORS.ANT_MODAL_CONTENT);
+await modal.waitFor({ state: 'visible', timeout: TIMEOUTS.SHORT });
+
+// Input field inside modal (Local Universe)
+const input = modal.locator('input[type="text"]').first();
+await input.fill(value);
+
+// Button inside modal (Local Universe)
+const submitButton = modal.getByRole('button', { name: '作成する' });
+await submitButton.click();
+
+// Wait for modal to close
+await modal.waitFor({ state: 'hidden', timeout: TIMEOUTS.DEFAULT });
+```
+
+**Ant Design Dropdown Operation Pattern**:
+```typescript
+// Open dropdown
+await page.getByRole('combobox').click();
+
+// Wait for options to appear
+await page.waitForTimeout(TIMEOUTS.SPA_RENDERING);
+
+// Click option
+const option = page.locator(SELECTORS.ANT_SELECT_OPTION).filter({ hasText: targetName }).first();
+await option.click();
+
+// Close dropdown (Escape key)
+await page.keyboard.press('Escape');
+await page.waitForTimeout(TIMEOUTS.DROPDOWN_ANIMATION);
 ```
 
 **Notes**:

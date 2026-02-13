@@ -262,6 +262,25 @@ page.getByPlaceholder('Enter Email Address')
 page.locator('.login-button')
 ```
 
+### 3.4 Managing Complex Elements
+
+```typescript
+export class CoursePage {
+  // Manage by grouping
+  readonly search = {
+    input: this.page.locator('[data-testid="search-input"]'),
+    button: this.page.locator('[data-testid="search-button"]'),
+    suggestions: this.page.locator('[data-testid="suggestions"]')
+  };
+
+  readonly filters = {
+    category: this.page.locator('[data-testid="filter-category"]'),
+    price: this.page.locator('[data-testid="filter-price"]'),
+    apply: this.page.locator('[data-testid="apply-filters"]')
+  };
+}
+```
+
 ---
 
 ## 4. Layer 2: Actions
@@ -387,6 +406,45 @@ async execute(url: string, email: string, password: string): Promise<void> {
 - ❌ Direct reference to environment configuration values
 - ❌ Omit intermediate step logs
 
+### 4.3 Waiting Logic Best Practices
+
+```typescript
+// ✅ Good: Explicit waiting
+await this.page.waitForLoadState('networkidle');
+await this.loginPage.emailInput.waitFor({ state: 'visible', timeout: 5000 });
+
+// ✅ Good: Conditional waiting
+await this.page.waitForFunction(() => {
+  return document.querySelectorAll('.course-item').length > 0;
+});
+
+// ⚠️ Avoid: Fixed-time waiting (last resort, constants + comment required)
+// Wait for modal animation to complete
+await this.page.waitForTimeout(TIMEOUTS.MODAL_ANIMATION);
+```
+
+### 4.4 Error Handling
+
+```typescript
+async execute(email: string, password: string): Promise<void> {
+  try {
+    // Terms of use screen (optional)
+    await this.loginPage.termsCheckbox.waitFor({
+      state: 'visible',
+      timeout: 5000
+    });
+    await this.loginPage.acceptTerms();
+  } catch (error) {
+    console.log('Terms of use screen skipped (already agreed)');
+  }
+
+  // Main process
+  await this.loginPage.fillEmail(email);
+  await this.loginPage.fillPassword(password);
+  await this.loginPage.clickLogin();
+}
+```
+
 ---
 
 ## 5. Layer 3: Tests
@@ -441,6 +499,51 @@ test.describe('Test Suite Name', () => {
 - ❌ MUST NOT directly write Locators
 - ❌ MUST NOT write logic depending on page structure or DOM
 - ❌ MUST NOT have business logic with conditional branching
+
+### 5.3 Structuring Tests
+
+```typescript
+test.describe('Login Functionality', () => {
+
+  test.describe('Normal Cases', () => {
+    test('Can login with valid credentials', async ({ page }) => {
+      // ...
+    });
+
+    test('Redirected to dashboard after login', async ({ page }) => {
+      // ...
+    });
+  });
+
+  test.describe('Error Cases', () => {
+    test('Error message displayed with invalid email', async ({ page }) => {
+      // ...
+    });
+
+    test('Error message displayed with empty password', async ({ page }) => {
+      // ...
+    });
+  });
+
+});
+```
+
+### 5.4 Validation Best Practices
+
+```typescript
+// ✅ Good example: Clear validations
+expect(await loginPage.isLoggedIn()).toBeTruthy();
+expect(page.url()).toContain('/dashboard');
+expect(await dashboardPage.getWelcomeMessage()).toBe('おかえりなさい');
+
+// ✅ Good example: Multiple item validation
+const courseCount = await coursePage.getCourseCount();
+expect(courseCount).toBeGreaterThan(0);
+expect(courseCount).toBeLessThanOrEqual(50);
+
+// ❌ Anti-pattern: Ambiguous validation
+expect(true).toBeTruthy(); // What is being validated is unclear
+```
 
 ---
 
@@ -569,6 +672,124 @@ export const TEST_DATA = {
 
 ---
 
+## 7. Naming Conventions
+
+### 7.1 TypeScript Naming Conventions
+
+| Type | Convention | Examples |
+| --- | --- | --- |
+| **Classes** | PascalCase | `LoginPage`, `LoginAction` |
+| **Methods** | camelCase | `fillEmail()`, `clickButton()` |
+| **Variables** | camelCase | `emailInput`, `userName` |
+| **Constants** | UPPER_SNAKE_CASE | `MAX_RETRY`, `DEFAULT_TIMEOUT` |
+| **Interfaces** | PascalCase | `TestEnvironment`, `UserData` |
+| **Type Aliases** | PascalCase | `PageOptions`, `ActionResult` |
+
+### 7.2 Test Name Naming Conventions
+
+```typescript
+// ✅ Good example: Specific and understandable
+test('Can login with valid credentials', async ({ page }) => {});
+test('Error message displayed with invalid email address', async ({ page }) => {});
+test('Course search displays 10 results', async ({ page }) => {});
+
+// ❌ Anti-pattern: Abstract and unclear
+test('Login test', async ({ page }) => {});
+test('Error check', async ({ page }) => {});
+test('test1', async ({ page }) => {});
+```
+
+---
+
+## 8. Coding Conventions
+
+### 8.1 TypeScript Configuration
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  }
+}
+```
+
+### 8.2 Code Formatting
+
+**Prettier Configuration**
+
+```json
+{
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "es5",
+  "printWidth": 100
+}
+```
+
+### 8.3 Comment Conventions
+
+```typescript
+/**
+ * Method description
+ *
+ * @param email - Email address
+ * @param password - Password
+ * @returns Whether login succeeded
+ *
+ * @example
+ * ```typescript
+ * const result = await loginAction.execute('user@example.com', 'password');
+ * ```
+ */
+async execute(email: string, password: string): Promise<boolean> {
+  // Implementation
+}
+```
+
+---
+
+## 9. Error Handling
+
+### 9.1 Error Handling Principles
+
+```typescript
+// ✅ Good example: Specific error message
+throw new Error(`Login failed. Email: ${email}`);
+
+// ❌ Anti-pattern: Unclear error
+throw new Error('An error occurred');
+```
+
+### 9.2 Retry Logic
+
+```typescript
+async executeWithRetry(maxRetries: number = 3): Promise<void> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await this.execute();
+      return;
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      console.log(`Retry ${i + 1}/${maxRetries}`);
+      // Wait before retry
+      await this.page.waitForTimeout(TIMEOUTS.MODAL_ANIMATION);
+    }
+  }
+}
+```
+
+---
+
 ## 10. Fixture Definition
 
 ### 10.1 Fixture Role
@@ -636,6 +857,85 @@ export { expect } from '@playwright/test';
 1. Create Action class in `actions/`
 2. Add import and registration to Fixture definition file
 3. Declare as argument in test file and use
+
+---
+
+## 11. Test Data Management
+
+### 11.1 Using Fixture Data
+
+```typescript
+// fixtures/users.json
+{
+  "validUser": {
+    "email": "valid@example.com",
+    "password": "ValidPass123"
+  },
+  "invalidUser": {
+    "email": "invalid@example.com",
+    "password": "wrong"
+  }
+}
+
+// Usage in tests
+import { test, expect } from '../fixtures/app.fixture';
+import users from '../fixtures/users.json';
+
+test('Login with valid user', async ({ loginAction }) => {
+  await loginAction.execute(users.validUser.email, users.validUser.password);
+});
+```
+
+### 11.2 Test Data Generation
+
+```typescript
+// utils/testDataGenerator.ts
+export class TestDataGenerator {
+  static generateEmail(): string {
+    return `test-${Date.now()}@example.com`;
+  }
+
+  static generatePassword(): string {
+    return `Pass${Math.random().toString(36).substring(7)}123`;
+  }
+}
+```
+
+---
+
+## Appendix
+
+### A. Checklist
+
+**When Creating Page Objects**
+
+- [ ] Define locators with `readonly`
+- [ ] Prioritize `data-testid` for selector definition
+- [ ] Single-responsibility methods only
+- [ ] Write JSDoc comments
+
+**When Creating Actions**
+
+- [ ] Inherit `BaseAction`
+- [ ] Use Page Objects
+- [ ] Appropriate waiting logic
+- [ ] Implement error handling
+
+**When Creating Tests**
+
+- [ ] AAA pattern
+- [ ] Ensure independence
+- [ ] Clear validations
+- [ ] Meaningful test names
+
+### B. Common Mistakes
+
+| Mistake | Correct Approach |
+| --- | --- |
+| Business logic in Page Object | Move to Action |
+| Complex logic in Test | Move to Action |
+| Excessive fixed wait times | Use explicit waiting |
+| Hard-coded selectors | Manage in Page Object |
 
 ---
 

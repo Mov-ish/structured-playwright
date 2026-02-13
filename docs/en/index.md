@@ -1,5 +1,5 @@
 # INDEX.md
-## 4-Layer Architecture (Layer 3) — Documentation-First Operations (Enterprise Edition)
+## 4-Layer Architecture (Layer 3) — Documentation-First Operations (Generic Edition)
 
 This directory provides a documentation system for AI (ClaudeCode / Codex / Cursor) and humans to build and extend E2E tests **following a unified standard**.
 
