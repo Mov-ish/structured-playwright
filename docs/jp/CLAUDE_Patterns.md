@@ -534,6 +534,165 @@ async clickWithRetry(locator: Locator, maxRetries: number = 3): Promise<void> {
 
 ---
 
+### 5.3 AI Coding Tool使用時の注意 - タイムアウトエラー隠蔽パターンの危険性
+
+**ルール化の背景**：
+- **日付**: 2026-02-16
+- **発見**: Playwrightテストで大量の `.catch(() => false)` パターンが存在
+- **原因**: AI Coding Toolが「エラーを消す」簡単な解決策を提案しがち
+- **問題**: タイムアウトエラーが隠蔽され、テストが false positive（誤った成功）を報告
+- **結論**: `.catch(() => false)` は **絶対に使用禁止**、Playwrightネイティブアサーションを使用
+
+#### 5.3.1 問題のあるパターン（AI生成コードに多い）
+
+```typescript
+// ❌ 危険：タイムアウトエラーを隠蔽する
+const isVisible = await element.isVisible({ timeout: 5000 }).catch(() => false);
+if (isVisible) {
+  await element.click();
+}
+
+// 何が問題か：
+// 1. タイムアウト発生時に false を返す → エラーが隠蔽される
+// 2. タイムアウトで画面が閉じられたのに「テスト完了」と誤認
+// 3. 真の問題（セレクター誤り、レンダリング遅延）が見えない
+// 4. デバッグが困難になる
+```
+
+**AI Coding Toolがこのパターンを生成しやすい理由**：
+1. エラーが消えて「動く」ようになる
+2. 構文的に正しく、TypeScriptの型も通る
+3. すぐに結果が出る
+4. テストの本質（検証）より実装（動作）を優先しがち
+
+#### 5.3.2 正しいパターン
+
+**パターンA: オプショナル要素のチェック**
+```typescript
+// ✅ 正しい：Playwrightネイティブアサーション
+const { expect } = await import('@playwright/test');
+try {
+  await expect(element).toBeVisible({ timeout: TIMEOUTS.CHECK });
+  await element.click();
+} catch {
+  // Optional element, skip if not present
+  // タイムアウトが発生した理由を考える：
+  // - セレクターが間違っている？
+  // - レンダリングが遅い？
+  // - 条件によって表示されない要素？
+}
+```
+
+**パターンB: boolean検証メソッド**
+```typescript
+// ✅ 正しい：検証メソッドでのパターン
+async isElementVisible(): Promise<boolean> {
+  const { expect } = await import('@playwright/test');
+  try {
+    await expect(element).toBeVisible({ timeout: TIMEOUTS.CHECK });
+    return true;
+  } catch {
+    // 要素が見つからない場合は false を返す
+    // ただし、タイムアウトはログに記録される
+    return false;
+  }
+}
+```
+
+**パターンC: ネストした条件チェック（フォールバック）**
+```typescript
+// ✅ 正しい：複数要素のフォールバックパターン
+try {
+  await expect(primaryElement).toBeVisible({ timeout: TIMEOUTS.SHORT });
+  await primaryElement.click();
+} catch {
+  try {
+    await expect(secondaryElement).toBeVisible({ timeout: TIMEOUTS.SHORT });
+    await secondaryElement.click();
+  } catch {
+    // Both elements not found - this is the real issue
+    throw new Error('Primary and secondary elements not found');
+  }
+}
+```
+
+#### 5.3.3 AI Coding Tool使用時のチェックリスト
+
+**❌ 危険な兆候（AIコードレビュー時に要注意）**
+
+1. **同じエラーハンドリングパターンが大量に存在**
+   ```bash
+   # 疑わしいパターンを検出
+   git diff | grep -n "\.catch(() => false)"
+   git diff | grep -n "\.catch(() => true)"
+   ```
+
+2. **`.catch(() => ...)` の多用**
+   - 5箇所以上同じパターン → AIコピペの可能性大
+
+3. **boolean型だけど本当の状態が分からない**
+   ```typescript
+   // ❌ タイムアウトと存在しないを区別できない
+   const isVisible = await element.isVisible().catch(() => false);
+
+   // ✅ タイムアウトと存在しないを区別できる
+   try {
+     await expect(element).toBeVisible();
+     return true;
+   } catch (error) {
+     console.log(`Element not visible: ${error.message}`);
+     return false;
+   }
+   ```
+
+**✅ コードレビュー時のチェックポイント**
+
+1. **`.catch(() => false/true)` を見つけたら必ず疑う**
+   - 本当にエラーを隠蔽して良いのか？
+   - タイムアウトと存在しないを区別できるか？
+
+2. **同じパターンの大量コピペに警戒**
+   - AI生成の可能性が高い
+   - 一箇所でも問題があれば全体が問題
+
+3. **「動く」≠「正しい」を意識**
+   - テストは失敗することに意味がある
+   - エラーメッセージが有益か確認
+
+4. **Playwrightのベストプラクティスを優先**
+   - `expect().toBeVisible()` が推奨される理由を理解
+   - フレームワークの設計思想を尊重
+
+#### 5.3.4 実装例と効果
+
+**修正前の問題コード**：
+```typescript
+// モーダル処理の例
+if (await modal.isVisible({ timeout: TIMEOUTS.CHECK }).catch(() => false)) {
+  await button.click();
+}
+```
+
+**修正後の正しいコード**：
+```typescript
+const { expect } = await import('@playwright/test');
+try {
+  await expect(modal).toBeVisible({ timeout: TIMEOUTS.CHECK });
+  await button.click();
+  await expect(modal).not.toBeVisible({ timeout: TIMEOUTS.SHORT });
+} catch {
+  // Modal not present, skip
+}
+```
+
+**効果**：
+1. ✅ タイムアウトが適切にエラーとして検出される
+2. ✅ デバッグが容易になる（エラーメッセージが明確）
+3. ✅ 誤検知（false positive）が削減される
+4. ✅ コードの一貫性が保たれる
+
+---
+
 ## § 6. 新パターン追記エリア
 
 ### 2026-02-02 - 確認ダイアログの待機パターン
