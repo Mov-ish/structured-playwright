@@ -534,6 +534,165 @@ async clickWithRetry(locator: Locator, maxRetries: number = 3): Promise<void> {
 
 ---
 
+### 5.3 AI Coding Tool Precautions - Dangers of Timeout Error Concealment Pattern
+
+**Background of Rule Formalization**:
+- **Date**: 2026-02-16
+- **Discovery**: Large number of `.catch(() => false)` patterns existed in Playwright tests
+- **Cause**: AI Coding Tools tend to suggest easy solutions to "eliminate errors"
+- **Problem**: Timeout errors are concealed, causing tests to report false positives (incorrect success)
+- **Conclusion**: `.catch(() => false)` is **absolutely prohibited**; use Playwright native assertions
+
+#### 5.3.1 Problematic Pattern (Common in AI-Generated Code)
+
+```typescript
+// ❌ Dangerous: Conceals timeout errors
+const isVisible = await element.isVisible({ timeout: 5000 }).catch(() => false);
+if (isVisible) {
+  await element.click();
+}
+
+// What's the problem:
+// 1. Returns false on timeout → error is concealed
+// 2. Screen closed on timeout but misinterpreted as "test completed"
+// 3. True problem (selector error, rendering delay) becomes invisible
+// 4. Debugging becomes difficult
+```
+
+**Why AI Coding Tools Easily Generate This Pattern**:
+1. Error disappears and code "works"
+2. Syntactically correct, TypeScript types pass
+3. Immediate results
+4. Tends to prioritize implementation (operation) over test essence (validation)
+
+#### 5.3.2 Correct Patterns
+
+**Pattern A: Optional Element Check**
+```typescript
+// ✅ Correct: Playwright native assertion
+const { expect } = await import('@playwright/test');
+try {
+  await expect(element).toBeVisible({ timeout: TIMEOUTS.CHECK });
+  await element.click();
+} catch {
+  // Optional element, skip if not present
+  // Consider why timeout occurred:
+  // - Is the selector wrong?
+  // - Is rendering slow?
+  // - Element conditionally displayed?
+}
+```
+
+**Pattern B: Boolean Validation Method**
+```typescript
+// ✅ Correct: Pattern in validation method
+async isElementVisible(): Promise<boolean> {
+  const { expect } = await import('@playwright/test');
+  try {
+    await expect(element).toBeVisible({ timeout: TIMEOUTS.CHECK });
+    return true;
+  } catch {
+    // Return false if element not found
+    // However, timeout is logged
+    return false;
+  }
+}
+```
+
+**Pattern C: Nested Conditional Check (Fallback)**
+```typescript
+// ✅ Correct: Fallback pattern for multiple elements
+try {
+  await expect(primaryElement).toBeVisible({ timeout: TIMEOUTS.SHORT });
+  await primaryElement.click();
+} catch {
+  try {
+    await expect(secondaryElement).toBeVisible({ timeout: TIMEOUTS.SHORT });
+    await secondaryElement.click();
+  } catch {
+    // Both elements not found - this is the real issue
+    throw new Error('Primary and secondary elements not found');
+  }
+}
+```
+
+#### 5.3.3 AI Coding Tool Usage Checklist
+
+**❌ Danger Signs (Requires Careful Review of AI Code)**
+
+1. **Large number of same error handling pattern**
+   ```bash
+   # Detect suspicious patterns
+   git diff | grep -n "\.catch(() => false)"
+   git diff | grep -n "\.catch(() => true)"
+   ```
+
+2. **Excessive use of `.catch(() => ...)`**
+   - 5+ instances of same pattern → High likelihood of AI copy-paste
+
+3. **Boolean type but true state unknown**
+   ```typescript
+   // ❌ Cannot distinguish between timeout and non-existence
+   const isVisible = await element.isVisible().catch(() => false);
+
+   // ✅ Can distinguish between timeout and non-existence
+   try {
+     await expect(element).toBeVisible();
+     return true;
+   } catch (error) {
+     console.log(`Element not visible: ${error.message}`);
+     return false;
+   }
+   ```
+
+**✅ Code Review Checkpoints**
+
+1. **Always suspect when finding `.catch(() => false/true)`**
+   - Is it really okay to conceal the error?
+   - Can you distinguish between timeout and non-existence?
+
+2. **Be cautious of large copy-paste of same pattern**
+   - High likelihood of AI generation
+   - If one place has problem, entire code has problem
+
+3. **Be aware that "works" ≠ "correct"**
+   - Tests have meaning in failing
+   - Verify error messages are informative
+
+4. **Prioritize Playwright best practices**
+   - Understand why `expect().toBeVisible()` is recommended
+   - Respect framework design philosophy
+
+#### 5.3.4 Implementation Example and Effects
+
+**Problematic Code Before Fix**:
+```typescript
+// Modal handling example
+if (await modal.isVisible({ timeout: TIMEOUTS.CHECK }).catch(() => false)) {
+  await button.click();
+}
+```
+
+**Correct Code After Fix**:
+```typescript
+const { expect } = await import('@playwright/test');
+try {
+  await expect(modal).toBeVisible({ timeout: TIMEOUTS.CHECK });
+  await button.click();
+  await expect(modal).not.toBeVisible({ timeout: TIMEOUTS.SHORT });
+} catch {
+  // Modal not present, skip
+}
+```
+
+**Effects**:
+1. ✅ Timeouts properly detected as errors
+2. ✅ Debugging becomes easier (clear error messages)
+3. ✅ False positives reduced
+4. ✅ Code consistency maintained
+
+---
+
 ## § 6. New Pattern Addition Area
 
 ### 2026-02-02 - Confirmation Dialog Waiting Pattern

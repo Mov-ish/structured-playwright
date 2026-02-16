@@ -253,6 +253,7 @@ await expect(page.locator('[role="alert"]')).toContainText('エラーメッセ�
 | Semantic locators for elements with minimal semantic layer | Insufficient attributes | `:near()`, `svg[data-icon]` | §Locator Strategy Rules |
 | Importing `test` directly from `@playwright/test` | High coupling without Fixture | Import from Fixture file | E2ETest_Framework.md §10 |
 | Manually `new`ing Actions | Dependencies not explicit | Receive via Fixture arguments | E2ETest_Framework.md §10 |
+| **`.catch(() => false)` pattern** | **Timeout error concealment, false positives** | **`expect().toBeVisible()` + try-catch** | **CLAUDE_Patterns.md §5.3** |
 
 ---
 
