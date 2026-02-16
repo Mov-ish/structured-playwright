@@ -253,6 +253,7 @@ await expect(page.locator('[role="alert"]')).toContainText('エラーメッセ�
 | 意味層の薄い要素へのセマンティックロケータ | 属性が不足 | `:near()`、`svg[data-icon]` | §ロケータ戦略ルール |
 | `@playwright/test`から直接`test`をインポート | Fixture未経由で結合度が高い | Fixtureファイルからインポート | E2ETest_Framework.md §10 |
 | Actionを手動で`new`する | 依存が明示されない | Fixture引数で受け取る | E2ETest_Framework.md §10 |
+| **`.catch(() => false)` パターン** | **タイムアウトエラー隠蔽・誤検知** | **`expect().toBeVisible()` + try-catch** | **CLAUDE_Patterns.md §5.3** |
 
 ---
 
