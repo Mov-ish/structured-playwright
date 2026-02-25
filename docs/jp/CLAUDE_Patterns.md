@@ -765,7 +765,65 @@ await this.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
 
 ---
 
+### 2026-02-26 - Action層の verify メソッドパターン（§4.2/§5.2 両立）
+
+**ルール化の背景**：
+- **日付**: 2026-02-26
+- **発見**: 別の AI Coding Tool が E2ETest_Framework.md の §4.2（Action層に expect 禁止）と §5.2 禁止事項（Test層に Locator 禁止）を「矛盾」と解釈し、§4.2 を破る方針を選択した
+- **原因**: `waitFor()` が「待機操作であり assertion ではない」ことが明文化されておらず、第三の選択肢に気づけなかった
+- **結論**: `waitFor()` ベースの verify メソッドで全ルールを同時に満たせる。ルール明確化は E2ETest_Framework.md §4.2 に追記済み。実装パターンをここに記録する
+
+**パターン: Action層で verify メソッドを実装し、Test層で expect する**
+
+```typescript
+// === Action層 ===
+// waitFor() で非同期描画を待ってから状態を返す
+// waitFor() は「待機操作」であり expect（assertion）ではないため §4.2 に抵触しない
+
+async isRegistrationComplete(): Promise<boolean> {
+  try {
+    await this.completionMessage.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async getDisplayedMemberName(): Promise<string> {
+  await this.memberNameCell.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
+  return await this.memberNameCell.textContent() || '';
+}
+```
+
+```typescript
+// === Test層 ===
+// Action の verify メソッドの戻り値を expect() で検証
+// Locator を直接書かないため §5.2 禁止事項に抵触しない
+
+expect(await memberAction.isRegistrationComplete()).toBeTruthy();
+expect(await memberAction.getDisplayedMemberName()).toBe('山田太郎');
+```
+
+**なぜ `isVisible()` ではなく `waitFor()` か**：
+- `isVisible()` は呼び出し時点の状態を即時返す（1回のみ）
+- 非同期描画中の要素は `isVisible()` → false になりうる
+- `waitFor()` はタイムアウトまでリトライするため、描画完了を確実に待てる
+
+**❌ 避けるべきパターン**：
+```typescript
+// Test層に Locator を記述（§5.2 禁止事項違反）
+expect(await page.locator('.success-message').isVisible()).toBeTruthy();
+
+// Action層で expect（§4.2 違反）
+await expect(this.successMessage).toBeVisible();
+```
+
+---
+
 ## § 7. パターン改善ログ
+
+### 2026-02-26
+- Action層の verify メソッドパターンを追加（§4.2/§5.2 両立）
 
 ### 2026-02-02
 - 確認ダイアログの待機パターンを追加
@@ -777,5 +835,5 @@ await this.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
 
 ---
 
-**最終更新**: 2026-02-02  
+**最終更新**: 2026-02-26
 **管理者**: Ray Ishida

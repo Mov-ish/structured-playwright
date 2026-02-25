@@ -407,6 +407,38 @@ async execute(url: string, email: string, password: string): Promise<void> {
 - ❌ 環境設定値の直接参照
 - ❌ 中間ステップのログ省略
 
+**`waitFor()` と `expect()` の区別（重要）**
+
+Action層で禁止されるのは `expect()` による**テスト固有のアサーション**である。
+`locator.waitFor()` は**待機操作**であり、アサーションではないため、Action層で使用できる。
+
+```typescript
+// ❌ 禁止：Action層でのexpect（テスト固有のアサーション）
+await expect(this.successMessage).toBeVisible();
+
+// ✅ 許可：Action層でのwaitFor（次の操作のための待機）
+await this.successMessage.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
+
+// ✅ 許可：Action層でのwaitFor → boolean返却（Test層でexpectする）
+async isSuccessMessageVisible(): Promise<boolean> {
+  try {
+    await this.successMessage.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
+    return true;
+  } catch {
+    return false;
+  }
+}
+```
+
+**使い分けの基準**：
+| メソッド | 種類 | Action層 | 用途 |
+|---------|------|----------|------|
+| `expect(locator).toBeVisible()` | アサーション | ❌ 禁止 | テスト検証 |
+| `locator.waitFor({ state })` | 待機操作 | ✅ 許可 | 次の操作の前提条件確認、verify メソッドの実装 |
+| `locator.isVisible()` | 即時評価 | ✅ 許可 | 状態の一回限りの確認（非同期描画に弱い） |
+
+> **注意**: `isVisible()` は呼び出し時点の状態を即時返すため、非同期描画中の要素には `waitFor()` を使うこと。
+
 ### 4.3 待機処理のベストプラクティス
 
 ```typescript
@@ -422,7 +454,16 @@ await this.page.waitForFunction(() => {
 // ⚠️ 避けるべき：固定時間待機（最終手段、使用時は定数+コメント必須）
 // モーダルアニメーション完了を待つ
 await this.page.waitForTimeout(TIMEOUTS.MODAL_ANIMATION);
+
+// ✅ 良い例：UI状態の確認（verifyメソッドで使用）
+// waitFor は「待機」であり「アサーション」ではないため、Action層で使用可能
+await this.successMessage.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
+await this.loadingSpinner.waitFor({ state: 'hidden', timeout: TIMEOUTS.DEFAULT });
 ```
+
+> **verify メソッドパターン**: Action層で `waitFor()` を使って UI 状態を確認し、
+> boolean/string を返す verify メソッドを実装する具体例は
+> **[CLAUDE_Patterns.md § 6「Action層の verify メソッドパターン」](./CLAUDE_Patterns.md)** を参照。
 
 ### 4.4 エラーハンドリング
 
@@ -501,6 +542,10 @@ test.describe('テストスイート名', () => {
 - ❌ ページ構造やDOMに依存するロジックを書いてはならない
 - ❌ 条件分岐による業務ロジックを持たせてはならない
 
+> **§4.2 と §5.2 禁止事項の両立**: Test層で Locator を書けず、Action層で expect を書けない場合、
+> Action層に `waitFor()` ベースの verify メソッドを実装し、Test層でその戻り値を `expect()` する。
+> 詳細は §4.2「`waitFor()` と `expect()` の区別」および §5.4「Test層とAction層の検証の分担」を参照。
+
 ### 5.3 テストの構造化
 
 ```typescript
@@ -544,9 +589,15 @@ expect(courseCount).toBeLessThanOrEqual(50);
 
 // ❌ 悪い例：曖昧な検証
 expect(true).toBeTruthy(); // 何を検証しているか不明
+
+// ✅ 良い例：Action の verify メソッド経由で検証（§4.2 と §5.2 禁止事項を両立）
+expect(await memberAction.isRegistrationComplete()).toBeTruthy();
+expect(await memberAction.getDisplayedMemberName()).toBe('山田太郎');
 ```
 
-
+> **Test層とAction層の検証の分担**: Test層では Locator を書かず（§5.2 禁止事項）、Action層では expect を使わない（§4.2）。
+> この2つを同時に満たす verify メソッドパターンの詳細は
+> **[CLAUDE_Patterns.md § 6「Action層の verify メソッドパターン」](./CLAUDE_Patterns.md)** を参照。
 
 ---
 
