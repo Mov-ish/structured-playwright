@@ -765,7 +765,67 @@ await this.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {
 
 ---
 
+## § 6. New Pattern Addition Area
+
+### 2026-02-26 - Action Layer verify Method Pattern (§4.2/§5.2 Compatibility)
+
+**Background of Rule Formalization**:
+- **Date**: 2026-02-26
+- **Discovery**: Another AI Coding Tool interpreted §4.2 (expect prohibited in Action layer) and §5.2 prohibitions (Locators prohibited in Test layer) as "contradictory" and chose to violate §4.2
+- **Cause**: The fact that `waitFor()` is "a waiting operation, not an assertion" was not documented, so the third option was not recognized
+- **Conclusion**: A `waitFor()`-based verify method can satisfy all rules simultaneously. The rule clarification has been added to E2ETest_Framework.md §4.2. The implementation pattern is recorded here.
+
+**Pattern: Implement verify methods in Action layer, use expect in Test layer**
+
+```typescript
+// === Action Layer ===
+// Wait for async rendering to complete using waitFor(), then return state
+// waitFor() is a "waiting operation" and not expect (assertion), so it does not violate §4.2
+
+async isRegistrationComplete(): Promise<boolean> {
+  try {
+    await this.completionMessage.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async getDisplayedMemberName(): Promise<string> {
+  await this.memberNameCell.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
+  return await this.memberNameCell.textContent() || '';
+}
+```
+
+```typescript
+// === Test Layer ===
+// Verify the return value of Action's verify method with expect()
+// Does not violate §5.2 prohibitions since Locators are not directly written
+
+expect(await memberAction.isRegistrationComplete()).toBeTruthy();
+expect(await memberAction.getDisplayedMemberName()).toBe('Taro Yamada');
+```
+
+**Why `waitFor()` instead of `isVisible()`**:
+- `isVisible()` returns the state at the time of the call immediately (only once)
+- Elements during async rendering can return `isVisible()` → false
+- `waitFor()` retries until timeout, so it reliably waits for rendering completion
+
+**❌ Patterns to Avoid**:
+```typescript
+// Writing Locator in Test layer (§5.2 prohibition violation)
+expect(await page.locator('.success-message').isVisible()).toBeTruthy();
+
+// Using expect in Action layer (§4.2 violation)
+await expect(this.successMessage).toBeVisible();
+```
+
+---
+
 ## § 7. Pattern Improvement Log
+
+### 2026-02-26
+- Added Action layer verify method pattern (§4.2/§5.2 compatibility)
 
 ### 2026-02-02
 - Added confirmation dialog waiting pattern

@@ -240,9 +240,42 @@ export class Auth0LoginPage extends BasePage {
 - ❌ `private readonly` でロケーター定義
 - ❌ ビジネスロジックを含める
 - ❌ 複数ページにまたがる操作
-- ❌ 期待結果の検証（expect）
-- ❌ 待機時間の決定（Action層で行う）
+- ❌ 期待結果の検証（`expect(locator).toBeVisible()` 等のアサーション）
+- ❌ `waitForTimeout()` による固定待機（フロー制御の待機は Action層で行う）
 - ❌ 環境依存の値を持つ
+
+**`waitFor()` + try-catch は Page Object でも使用可能**
+
+boolean を返す状態確認メソッド（`isXxx()` / `isMemberDisplayed()` 等）の内部では、
+`waitFor()` + try-catch パターンを使用してよい。
+`waitFor()` は「待機操作」であり `expect()` によるアサーションではないため、この層に置くことができる。
+
+```typescript
+// ✅ Page Object での状態確認メソッド — waitFor() + try-catch は許可
+async isMemberDisplayed(memberName: string): Promise<boolean> {
+  const row = this.getMemberRow(memberName);
+  try {
+    await row.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_VISIBLE });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ❌ 禁止：Page Object での expect（アサーション）
+async isMemberDisplayed(memberName: string): Promise<boolean> {
+  const row = this.getMemberRow(memberName);
+  await expect(row).toBeVisible(); // ← expect は禁止
+  return true;
+}
+
+// ❌ 禁止：即時評価（SPA の非同期描画に弱い）
+async isMemberDisplayed(memberName: string): Promise<boolean> {
+  return (await this.getMemberRow(memberName).count()) > 0; // ← count()/isVisible() は非同期描画前に返す可能性
+}
+```
+
+> **参考**: Action層での `waitFor()` の扱いは §4.2 を参照。
 
 ### 3.3 セレクタ優先順位
 
