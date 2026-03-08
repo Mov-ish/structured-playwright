@@ -1,12 +1,17 @@
-# macOS
+# Dependency directories (Zenn CLI等で必要)
+node_modules/
+
+# OS generated files
 .DS_Store
-**/.DS_Store
-
-
-# Windows
+.DS_Store?
+._*
 Thumbs.db
-**/Thumbs.db
 
+# Environment variables (秘密情報がある場合)
+.env
+
+# Local history (VS Codeのプラグインなどを使っている場合)
+.history/
 
 # 一時ファイル
 *.tmp
@@ -51,19 +56,3 @@ env/
 ENV/
 env.bak/
 venv.bak/
-
-# PyCharm
-.idea/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pytest
-.pytest_cache/
-.coverage
-htmlcov/
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
