@@ -239,9 +239,42 @@ export class Auth0LoginPage extends BasePage {
 - ❌ Define locators with `private readonly`
 - ❌ Include business logic
 - ❌ Operations spanning multiple pages
-- ❌ Expected result verification (expect)
-- ❌ Wait time determination (done in Action layer)
+- ❌ Expected result verification (`expect(locator).toBeVisible()` and similar assertions)
+- ❌ Fixed waiting with `waitForTimeout()` (flow-control waiting belongs in the Action layer)
 - ❌ Hold environment-dependent values
+
+**`waitFor()` + try-catch is also allowed in Page Objects**
+
+Inside boolean state-check methods (`isXxx()`, `isMemberDisplayed()`, etc.),
+the `waitFor()` + try-catch pattern may be used.
+`waitFor()` is a "waiting operation", not an `expect()` assertion, so it can reside in this layer.
+
+```typescript
+// ✅ State-check method in Page Object — waitFor() + try-catch is allowed
+async isMemberDisplayed(memberName: string): Promise<boolean> {
+  const row = this.getMemberRow(memberName);
+  try {
+    await row.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_VISIBLE });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ❌ Prohibited: expect (assertion) in Page Object
+async isMemberDisplayed(memberName: string): Promise<boolean> {
+  const row = this.getMemberRow(memberName);
+  await expect(row).toBeVisible(); // ← expect is prohibited
+  return true;
+}
+
+// ❌ Prohibited: Immediate evaluation (weak against SPA async rendering)
+async isMemberDisplayed(memberName: string): Promise<boolean> {
+  return (await this.getMemberRow(memberName).count()) > 0; // ← count()/isVisible() may return before rendering
+}
+```
+
+> **Reference**: For `waitFor()` usage in the Action layer, see §4.2.
 
 ### 3.3 Selector Priority
 
@@ -406,6 +439,38 @@ async execute(url: string, email: string, password: string): Promise<void> {
 - ❌ Direct reference to environment configuration values
 - ❌ Omit intermediate step logs
 
+**Distinguishing `waitFor()` from `expect()` (Important)**
+
+What is prohibited in the Action layer is **test-specific assertions** using `expect()`.
+`locator.waitFor()` is a **waiting operation**, not an assertion, and therefore can be used in the Action layer.
+
+```typescript
+// ❌ Prohibited: expect in Action layer (test-specific assertion)
+await expect(this.successMessage).toBeVisible();
+
+// ✅ Allowed: waitFor in Action layer (waiting for next operation)
+await this.successMessage.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
+
+// ✅ Allowed: waitFor in Action layer → return boolean (expect in Test layer)
+async isSuccessMessageVisible(): Promise<boolean> {
+  try {
+    await this.successMessage.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
+    return true;
+  } catch {
+    return false;
+  }
+}
+```
+
+**Usage Guidelines**:
+| Method | Type | Action Layer | Use Case |
+|--------|------|--------------|----------|
+| `expect(locator).toBeVisible()` | Assertion | ❌ Prohibited | Test verification |
+| `locator.waitFor({ state })` | Waiting operation | ✅ Allowed | Pre-condition confirmation for next operation, verify method implementation |
+| `locator.isVisible()` | Immediate evaluation | ✅ Allowed | One-time state check (weak against async rendering) |
+
+> **Note**: `isVisible()` returns the state at the time of the call immediately, so use `waitFor()` for elements during async rendering.
+
 ### 4.3 Waiting Logic Best Practices
 
 ```typescript
@@ -421,7 +486,15 @@ await this.page.waitForFunction(() => {
 // ⚠️ Avoid: Fixed-time waiting (last resort, constants + comment required)
 // Wait for modal animation to complete
 await this.page.waitForTimeout(TIMEOUTS.MODAL_ANIMATION);
+
+// ✅ Good: UI state confirmation (used in verify methods)
+// waitFor is "waiting" not "assertion", so it can be used in the Action layer
+await this.successMessage.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
+await this.loadingSpinner.waitFor({ state: 'hidden', timeout: TIMEOUTS.DEFAULT });
 ```
+
+> **verify Method Pattern**: For concrete examples of implementing verify methods in the Action layer that use `waitFor()` to check UI state and return boolean/string values, refer to
+> **[CLAUDE_Patterns.md § 6 "Action Layer verify Method Pattern"](./CLAUDE_Patterns.md)**.
 
 ### 4.4 Error Handling
 
@@ -499,6 +572,9 @@ test.describe('Test Suite Name', () => {
 - ❌ MUST NOT directly write Locators
 - ❌ MUST NOT write logic depending on page structure or DOM
 - ❌ MUST NOT have business logic with conditional branching
+
+> **Balancing §4.2 and §5.2 Prohibitions**: When you cannot write Locators in the Test layer and cannot use expect in the Action layer, implement `waitFor()`-based verify methods in the Action layer and use `expect()` on their return values in the Test layer.
+> For details, refer to §4.2 "Distinguishing `waitFor()` from `expect()`" and §5.4 "Validation Best Practices".
 
 ### 5.3 Structuring Tests
 
