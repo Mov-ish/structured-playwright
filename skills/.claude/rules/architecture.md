@@ -64,6 +64,46 @@ readonly emailInput: Locator;
 `waitFor()` + try-catchでbooleanを返す状態確認メソッドは許可。
 `expect()`によるアサーション、`waitForTimeout()`による固定待機は禁止。
 
+## Action層のステップログ
+
+Action層の各ステップは `this.step()` ヘルパーで記録する（`console.log`単体は非推奨）。
+`test.step()` によりreport.json・HTMLレポートにステップ構造が残り、Fail時にどのステップで落ちたか即特定できる。
+
+### BaseActionの必須ヘルパー
+
+```typescript
+// BaseAction に必ず実装する
+protected async step(name: string, fn: () => Promise<void>): Promise<void> {
+  console.log(`Step: ${name}`);
+  try {
+    const { test } = await import('@playwright/test');
+    await test.step(name, fn);
+  } catch {
+    // テストコンテキスト外（デバッグ時等）→ そのまま実行
+    await fn();
+  }
+}
+```
+
+### 使い方
+```typescript
+// Action内
+async execute(url: string, email: string, password: string): Promise<void> {
+  await this.step('ログインページへ遷移', async () => {
+    await this.loginPage.goto(url);
+  });
+  await this.step('認証情報入力', async () => {
+    await this.authPage.fillEmail(email);
+    await this.authPage.fillPassword(password);
+  });
+}
+```
+
+### ネスト防止ルール
+
+**Test層では `test.step()` で包まない。** ステップの粒度はAction層が管理する。
+Test層でstep()を使うとreportのネストが深くなり可読性が下がる。
+
 ## Fixture
 
 ```typescript
