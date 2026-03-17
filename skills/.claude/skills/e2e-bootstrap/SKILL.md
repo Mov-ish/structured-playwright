@@ -78,7 +78,77 @@ export const URL_PATTERNS = {
 
 ---
 
-## §5. .env.example
+## §5. playwright.config.ts 必須設定
+
+```typescript
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './src/tests',
+  timeout: 60000,                          // テスト全体のタイムアウト
+  expect: {
+    timeout: 10000,                        // 各expectのタイムアウト
+  },
+  reporter: [
+    ['json', { outputFile: 'test-results/report.json' }],  // 構造化レポート
+    ['html', { open: 'never' }],                            // HTMLレポート
+    ['list'],                                                // ターミナル表示
+  ],
+  use: {
+    trace: 'retain-on-failure',            // 失敗時のtrace自動保存
+    screenshot: 'only-on-failure',         // 失敗時のスクリーンショット
+    video: 'retain-on-failure',            // 失敗時の動画
+  },
+});
+```
+
+**なぜこの設定が必須か**:
+- `timeout` + `expect.timeout`: 無限に待たせない。偽Passの防止
+- `json` reporter: report.jsonにステップ構造が残る。Fail時の追跡に必須
+- `trace/screenshot/video on failure`: Fail時の原因特定を高速化
+- `html` reporter: 人間がブラウザで結果を確認できる
+
+---
+
+## §6. BaseAction 雛形
+
+全ActionはBaseActionを継承する。`step()`ヘルパーにより`test.step()`とconsole.logが両方出力される。
+
+```typescript
+// actions/BaseAction.ts
+import { Page } from '@playwright/test';
+
+export class BaseAction {
+  protected readonly page: Page;
+  protected readonly actionName: string;
+
+  constructor(page: Page, actionName: string) {
+    this.page = page;
+    this.actionName = actionName;
+  }
+
+  /**
+   * ステップ記録ヘルパー
+   * test.step() でreport.jsonにステップ構造を記録しつつ、
+   * console.log でCI環境のstdoutにもログを出す。
+   * テストコンテキスト外（デバッグ時等）ではフォールバックで直接実行。
+   */
+  protected async step(name: string, fn: () => Promise<void>): Promise<void> {
+    console.log(`Step: ${name}`);
+    try {
+      const { test } = await import('@playwright/test');
+      await test.step(name, fn);
+    } catch {
+      // テストコンテキスト外 → そのまま実行
+      await fn();
+    }
+  }
+}
+```
+
+---
+
+## §7. .env.example
 
 ```
 TEST_BASE_URL=
@@ -88,7 +158,7 @@ TEST_USER_PASSWORD=
 
 ---
 
-## §6. コーディング規約
+## §8. コーディング規約
 
 ### TypeScript設定（tsconfig.json）
 ```json
@@ -144,7 +214,7 @@ async execute(email: string, password: string): Promise<boolean> {
 
 ---
 
-## §7. Playwrightデフォルト構成から4層への変換手順
+## §9. Playwrightデフォルト構成から4層への変換手順
 
 1. `src/` 配下に4層ディレクトリ作成（§2参照）
 2. `config/constants.ts` と `config/env.ts` を作成（§4, §5参照）
@@ -163,7 +233,7 @@ async execute(email: string, password: string): Promise<boolean> {
 
 ---
 
-## §8. プロジェクト固有設定チェックリスト
+## §10. プロジェクト固有設定チェックリスト
 
 新プロジェクトに導入する際、以下を確認してCLAUDE.mdに記入する：
 

@@ -11,7 +11,8 @@ description: "E2Eテスト作成用。テスト追加・Actions/PageObject実装
 |---|---|---|
 | **Page Object** | `private readonly` | `readonly`（public）+ constructor初期化 |
 | **Page Object** | expect / waitForTimeout | 単一責任メソッド、waitFor+try-catchは許可 |
-| **Action** | expect() | waitFor()、各ステップで`console.log` |
+| **Action** | expect() | waitFor()、各ステップで`this.step()` |
+| **Action** | `console.log`単体でステップログ | `this.step('名前', async () => { ... })` |
 | **Action** | 数値/URLハードコード | TIMEOUTS/URL_PATTERNS定数 + 理由コメント |
 | **Test** | `from '@playwright/test'` | `from '../fixtures/app.fixture'` |
 | **Test** | `new XxxAction(page)` | Fixture引数 `async ({ xxxAction }) =>` |
@@ -74,31 +75,32 @@ await button.click({ force: true });
 ### 実装パターン
 ```typescript
 async execute(url: string, email: string, password: string): Promise<void> {
-  console.log('=== ログイン処理開始 ===');
-
-  console.log('Step 1: ログインページへ遷移');
-  await this.loginPage.goto(url);
+  await this.step('ログインページへ遷移', async () => {
+    await this.loginPage.goto(url);
+  });
 
   // （プロダクト固有のログイン前操作がある場合ここに）
 
-  console.log('Step 2: 外部認証ページへの遷移を待機');
-  await this.page.waitForURL(URL_PATTERNS.AUTH_LOGIN, { timeout: TIMEOUTS.DEFAULT });
-  // 外部認証画面の安定化待ち
-  await this.page.waitForTimeout(TIMEOUTS.AUTH_STABILIZATION);
+  await this.step('外部認証ページへの遷移を待機', async () => {
+    await this.page.waitForURL(URL_PATTERNS.AUTH_LOGIN, { timeout: TIMEOUTS.DEFAULT });
+    // 外部認証画面の安定化待ち
+    await this.page.waitForTimeout(TIMEOUTS.AUTH_STABILIZATION);
+  });
 
-  console.log('Step 3: 認証情報入力');
-  await this.authPage.fillEmail(email);
-  await this.authPage.fillPassword(password);
-  await this.authPage.clickSubmit();
+  await this.step('認証情報入力', async () => {
+    await this.authPage.fillEmail(email);
+    await this.authPage.fillPassword(password);
+    await this.authPage.clickSubmit();
+  });
 
-  console.log('Step 4: リダイレクト完了待機');
-  await this.page.waitForURL(URL_PATTERNS.DASHBOARD, { timeout: TIMEOUTS.LONG });
+  await this.step('リダイレクト完了待機', async () => {
+    await this.page.waitForURL(URL_PATTERNS.DASHBOARD, { timeout: TIMEOUTS.LONG });
+  });
 
   // ログイン成功検証（MUST）
   if (this.page.url().includes('/login')) {
     throw new Error('ログインに失敗しました');
   }
-  console.log('=== ログイン処理完了 ===');
 }
 ```
 
