@@ -73,14 +73,25 @@ Action層の各ステップは `this.step()` ヘルパーで記録する（`cons
 
 ```typescript
 // BaseAction に必ず実装する
+// 重要: fn() 実行中のエラーは catch しない。catch するのはテストコンテキスト判定のみ。
+// 旧実装の try { test.step(name, fn) } catch { fn() } は fn() のエラーも飲み込み、
+// Timeout/Crash が隠れた Pass（偽陽性）になるバグがあった。
 protected async step(name: string, fn: () => Promise<void>): Promise<void> {
   console.log(`Step: ${name}`);
+  let hasTestContext = false;
   try {
     const { test } = await import('@playwright/test');
-    await test.step(name, fn);
+    const info = test.info();
+    hasTestContext = info !== undefined;
   } catch {
-    // テストコンテキスト外（デバッグ時等）→ そのまま実行
-    await fn();
+    hasTestContext = false;
+  }
+
+  if (hasTestContext) {
+    const { test } = await import('@playwright/test');
+    await test.step(name, fn);  // エラーはそのまま伝播（catch しない）
+  } else {
+    await fn();                 // テストコンテキスト外のみフォールバック
   }
 }
 ```

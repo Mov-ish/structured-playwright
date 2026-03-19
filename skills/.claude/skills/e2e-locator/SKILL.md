@@ -33,6 +33,19 @@ page.locator('button:has-text("ログイン")')       // 部分一致
 page.locator('span:text-is("マイページ")')         // 完全一致（推奨）
 ```
 
+**has-text の危険性**: 部分一致のため意図しない要素にマッチする。
+```typescript
+// ❌ 「保存」で部分一致 → 以下すべてにマッチ → strict mode violation
+//   「保存する」「下書きを保存」「保存済みです」「一時保存」
+page.locator('button:has-text("保存")')
+
+// ✅ text-is で完全一致
+page.locator('button:text-is("保存")')
+
+// ✅ has-text を使う場合は必ず Local Universe で絞る
+page.locator('[role="dialog"] button:has-text("保存")')
+```
+
 **XPath変換時の罠**:
 ```typescript
 // ❌ 完全一致→部分一致に変換してしまう
@@ -112,6 +125,9 @@ table.locator('tr').filter({ hasText: targetText })
 
 // ✅ hasNotText でテキスト除外
 .filter({ hasNotText: 'すべて' })
+
+// 応用: 「編集」を選択（「一括編集」を除外）
+page.getByRole('button', { name: /編集/ }).filter({ hasNotText: '一括' })
 ```
 
 ## §9. UIライブラリ固有セレクタ（プロジェクトに合わせて追記）
@@ -157,3 +173,10 @@ async clickUser(name: string) {
 2. **次善**: `:near()` で周辺テキストから特定
 3. **妥協**: 親要素で絞り込んでから `.first()`
 4. **最終**: `.first()` + 詳細コメント + TODO
+
+```typescript
+// やむを得ない場合の書き方
+// このダイアログには1つのチェックボックスのみ存在（YYYY-MM-DD確認）
+// TODO: data-testid="agreement-checkbox" の追加を依頼（Issue #XXX）
+page.locator('[role="dialog"] input[type="checkbox"]').first()
+```

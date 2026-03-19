@@ -31,17 +31,41 @@ export const SELECTORS = {
 } as const;
 
 export const URL_PATTERNS = {
+  LOGIN: '**/login**',
+  DASHBOARD: '**/dashboard**',
+  LOGIN_PATH: '/login',
   // プロジェクト固有のURLパターンを追加
-  // 例: LOGIN: '**/login**',
-  // 例: DASHBOARD: '**/dashboard**',
+  // 例: AUTH_LOGIN: '**/auth.example.com/**',
 } as const;
 ```
 
+## 拡張例（プロジェクト固有の要素が増えたら追加）
+
+```typescript
+// TIMEOUTS 拡張例
+AUTH_STABILIZATION: 2000,  // 外部認証画面の安定化
+
+// SELECTORS 拡張例（複数画面で共通のセレクタのみ）
+AGREEMENT_CHECKBOX: 'input[type="checkbox"]:near(:text("同意する"))',
+AUTH_EMAIL_INPUT: 'input[name="username"]',
+AUTH_PASSWORD_INPUT: 'input[name="password"]',
+```
+
+## constants.ts に入れるもの / 入れないもの
+
+| 入れる | 入れない |
+|--------|---------|
+| **複数ファイルで共通**のセレクタ・URL・タイムアウト | **特定画面でしか使わない** Locator |
+| 静的な値のみ | 動的な値（引数で変わるもの）→ Page Object 内で処理 |
+
+特定画面固有の Locator は Page Object の constructor 内で定義するのが正しい設計。
+
 ## 新しい定数が必要な場合
 
-1. `constants.ts` に定数を追加
-2. 使用箇所でインポート
-3. **絶対にハードコードしない**
+1. 「複数ファイルで使うか？」を判断
+2. Yes → `constants.ts` に追加してインポート
+3. No → Page Object / Action 内で定義
+4. **絶対にハードコードしない**（タイムアウト数値・URLパターン・共通セレクタ）
 
 ## セキュリティ
 

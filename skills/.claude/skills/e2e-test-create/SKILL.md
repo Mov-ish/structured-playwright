@@ -98,8 +98,8 @@ async execute(url: string, email: string, password: string): Promise<void> {
   });
 
   // ログイン成功検証（MUST）
-  if (this.page.url().includes('/login')) {
-    throw new Error('ログインに失敗しました');
+  if (this.page.url().includes(URL_PATTERNS.LOGIN_PATH)) {
+    throw new Error('ログインに失敗しました（ログインページのままです）');
   }
 }
 ```
@@ -146,6 +146,8 @@ async execute(url: string, email: string, password: string): Promise<void> {
 |-----------|------|------|
 | 属性不足要素に `getByLabel()` | ❌ | label要素が存在しない場合がある |
 | `getByRole('checkbox')` スコープなし | ❌ | 一意に特定できない |
+| `button[aria-label="more"]` | ❌ | aria-label未設定の場合がある |
+| `button:has-text("...")` で三点リーダー | ❌ | 三点リーダーはSVGでありテキストではない |
 | `getByRole('row', { name })` | ❌ | accessible nameが設定されていないテーブルがある |
 | `filter({ hasNot })` でテキスト除外 | ❌ | hasNotは子要素チェック。hasNotTextが必要 |
 
@@ -163,7 +165,87 @@ async execute(url: string, email: string, password: string): Promise<void> {
 
 **既存コードがルール違反の可能性あり。コピー前にMUSTリストと照合。**
 
-## 命名規則
+---
+
+## §7. コンポーネント別パターン
+
+### フォーム入力
+```typescript
+await this.step('フォーム入力', async () => {
+  await inputField.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
+  await inputField.fill(value);
+  await submitButton.click();
+  await this.page.waitForLoadState('networkidle');
+});
+```
+
+### リスト操作（三点リーダーメニュー）
+```typescript
+await this.step('メニューを開く', async () => {
+  const row = this.page.locator('tr').filter({ hasText: targetText });
+  await row.locator('button:has(svg[data-icon="ellipsis"])').click();
+});
+await this.step('メニュー項目を選択', async () => {
+  await this.page.locator('li:has-text("編集")').click();
+});
+```
+
+### ファイルアップロード
+```typescript
+await this.step('ファイルアップロード', async () => {
+  await this.page.locator('input[type="file"]').setInputFiles(filePath);
+  await this.page.waitForResponse(resp => resp.url().includes('/upload'));
+  await this.page.waitForLoadState('networkidle');
+  await this.page.waitForTimeout(TIMEOUTS.SPA_RENDERING); // アップロード後のUI更新待ち
+});
+```
+
+---
+
+## §8. エラーハンドリングパターン
+
+### エラー時スクリーンショット保存
+```typescript
+// BaseAction に追加可能なヘルパー
+protected async executeWithScreenshot(
+  fn: () => Promise<void>,
+  context: string
+): Promise<void> {
+  try {
+    await fn();
+  } catch (error) {
+    await this.page.screenshot({ path: `test-results/error-${context}-${Date.now()}.png` });
+    throw error;
+  }
+}
+```
+
+### リトライパターン（不安定な操作向け）
+```typescript
+async clickWithRetry(locator: Locator, maxRetries = 3): Promise<void> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await locator.click({ timeout: TIMEOUTS.SHORT });
+      return;
+    } catch {
+      if (i === maxRetries - 1) throw;
+      await this.page.waitForTimeout(TIMEOUTS.SHORT);
+    }
+  }
+}
+```
+
+---
+
+## §9. テストデータ管理
+
+- **静的テストデータ**: `config/testdata/` に JSON ファイル配置
+- **動的テストデータ**: ユーティリティ関数で生成（タイムスタンプ付き名前等）
+- **テスト後クリーンアップ**: 作成したデータの削除を Action として実装
+
+---
+
+## §10. 命名規則
 
 | 種類 | パターン | 例 |
 |------|---------|---|
