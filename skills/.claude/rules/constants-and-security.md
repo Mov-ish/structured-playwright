@@ -9,32 +9,26 @@ import { URL_PATTERNS } from '../config/constants';  // Action
 import { test, expect } from '../fixtures/app.fixture'; // Test（Fixture経由）
 ```
 
-## 定数の標準構造
+## 定数の最小必須構造
+
+環境構築時に必ず含める定数。`e2e-bootstrap` §4 と一致。
 
 ```typescript
 export const TIMEOUTS = {
-  SHORT: 3000,
-  MEDIUM: 10000,
-  LONG: 30000,
-  DEFAULT: 10000,
-  MODAL_ANIMATION: 1000,    // モーダルCSSアニメーション完了
-  SPA_RENDERING: 2000,      // SPA描画完了（networkidle後）
-  REDIRECT: 3000,            // リダイレクト完了
-  ELEMENT_VISIBLE: 5000,     // 要素表示待ち
-  // プロジェクト固有のタイムアウトを追加
+  SHORT: 3000, MEDIUM: 10000, LONG: 30000, DEFAULT: 10000,
+  AUTH_STABILIZATION: 2000, MODAL_ANIMATION: 1000,
+  SPA_RENDERING: 2000, REDIRECT: 3000,
 } as const;
 
 export const SELECTORS = {
   MODAL: '[role="dialog"]',
   SUBMIT_BUTTON: 'button[type="submit"]',
-  // プロジェクト固有のセレクタを追加
 } as const;
 
 export const URL_PATTERNS = {
   LOGIN: '**/login**',
   DASHBOARD: '**/dashboard**',
   LOGIN_PATH: '/login',
-  // プロジェクト固有のURLパターンを追加
   // 例: AUTH_LOGIN: '**/auth.example.com/**',
 } as const;
 ```
@@ -43,7 +37,7 @@ export const URL_PATTERNS = {
 
 ```typescript
 // TIMEOUTS 拡張例
-AUTH_STABILIZATION: 2000,  // 外部認証画面の安定化
+ELEMENT_VISIBLE: 5000,
 
 // SELECTORS 拡張例（複数画面で共通のセレクタのみ）
 AGREEMENT_CHECKBOX: 'input[type="checkbox"]:near(:text("同意する"))',
