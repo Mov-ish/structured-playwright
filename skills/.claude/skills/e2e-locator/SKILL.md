@@ -146,6 +146,26 @@ UIライブラリ固有のセレクタはここに追記する。
 // page.locator('.MuiMenuItem-root').filter({ hasText: optionText })
 ```
 
+**⚠️ ポータルレンダリング Select の罠**: 多くの UI ライブラリ（Ant Design / MUI / Headless UI 等）は、Select / Combobox のドロップダウンを `body` 直下のポータルにレンダリングする。
+
+- `getByRole('option')` は **非表示の元 select 要素** にもマッチし、クリックできない場合がある
+- `combobox.fill()` は検索 debounce が発火しない場合がある
+- 解決策: ドロップダウンを click で開いてから、ポータル側の表示要素を直接クリックする
+
+```typescript
+// ❌ option role は非表示要素にマッチ
+await page.getByRole('option', { name: targetName }).click();
+// ❌ fill() で検索が発火しない場合がある
+await combobox.fill(targetName);
+
+// ✅ ドロップダウン展開 → ポータル側の表示要素を直接クリック
+await combobox.click();
+await page.locator('.ant-select-item-option')   // ライブラリ固有クラス
+  .filter({ hasText: targetName }).first().click();
+```
+
+ライブラリごとの詳細パターンは、プロジェクト固有のドキュメントに切り出して保守する。
+
 ## §10. constants.ts セレクタ定義方針
 
 ```typescript
