@@ -166,6 +166,37 @@ async execute(url: string, email: string, password: string): Promise<void> {
 | `getByRole('row', { name })` | ❌ | accessible nameが設定されていないテーブルがある |
 | `filter({ hasNot })` でテキスト除外 | ❌ | hasNotは子要素チェック。hasNotTextが必要 |
 
+### Navigation 完了待機
+
+| 試したこと | 結果 | 理由 |
+|-----------|------|------|
+| click 直後 `waitForLoadState('domcontentloaded')` | ❌ | 現ページで既に発火済みだと**即 return** する。後続 `goto()` が遷移完了前に走り `net::ERR_ABORTED` を起こす |
+| URL 到達のみで次ステップ実行 | ❌ | SPA 着地画面 init 中（~2s）の click は外側ハンドラ（着地画面のクリックハンドラ等）に**吸われて**期待動作しない |
+| 遷移先の既知要素 visible 待ち | ✅ | UI 要素ベースが基本。例: ログアウト直後 → 次画面の固有要素 visible 待ち |
+| URL 待機 + 着地画面の init 完了指標 visible 待ち | ✅ | 例: `waitForURL('**/dashboard**')` → `getByRole('main').getByRole('tablist').waitFor({ state: 'visible' })` |
+
+```typescript
+// ❌ domcontentloaded は遷移完了待機にならない
+await page.locator(':text-is("ログアウト")').click();
+await page.waitForLoadState('domcontentloaded');  // 即 return される
+await page.context().clearCookies();              // → 遷移中で ERR_ABORTED
+
+// ✅ 遷移先要素 visible で確実に待つ
+await page.locator(':text-is("ログアウト")').click();
+await loginPage.usernameInput.waitFor({ state: 'visible', timeout: TIMEOUTS.LONG });
+```
+
+```typescript
+// ❌ URL 到達で即 click → SPA init 中の親ハンドラに吸われる
+await page.waitForURL('**/dashboard**');
+await sideMenu.click();  // 遷移しない or 別動作になる
+
+// ✅ init 完了の目印要素 visible 後に click
+await page.waitForURL('**/dashboard**');
+await page.getByRole('main').getByRole('tablist').waitFor({ state: 'visible' });
+await sideMenu.click();
+```
+
 ---
 
 ## §6. AI作業手順（SOP）
