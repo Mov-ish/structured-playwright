@@ -125,6 +125,31 @@ async checkRequired(required: boolean): Promise<void> {
 }
 ```
 
+## ハングという形の偽陽性
+
+`waitForTimeout` だけでなく、**disabled な要素に対する click/hover も「ハングという偽陽性」を生む**。Playwright の `click()` は内部で actionable 待ち（visible + enabled + stable）を行うため、`aria-disabled="true"` や `disabled` 属性の要素を待ち続けて test timeout までハングする。「ハング → タイムアウト Fail」は形上は Fail だが、**真因が「データが想定と違う」か「Locator が違う」か切り分けに時間がかかり、フィードバックが遅延する**点で偽陽性に近い害がある。
+
+| 状況 | 判定 | 推奨 |
+|------|------|------|
+| 中身が空で disabled になるタブ・ボタンを直接 `click()` | ❌ ハング偽陽性 | 事前に `isEnabled()` を検証して即 fail-fast |
+| 「対象が存在する前提」の操作（一括削除 / 全件処理 等）を空コンテキストで実行 | ❌ 空振り偽陽性 | 操作前に対象の存在を `expect(...).toBeTruthy()` で検証 |
+
+代表例: **UI ライブラリの Tabs で中身が空のとき `aria-disabled="true"` になる罠**（Ant Design Tabs / MUI Tabs / Radix UI Tabs 等）。
+詳細は `.claude/skills/e2e-locator/ant-design-tabs-disabled.md` を参照。
+
+```typescript
+// ❌ 空のとき test timeout までハング → 真因が即時に判らない
+await navigationAction.switchTab('アーカイブ');
+await action.permanentDeleteAll();
+
+// ✅ 事前ガード → ハングなしで即 Fail、原因も明確
+expect(await action.hasItemsInTab('アーカイブ')).toBeTruthy();
+await navigationAction.switchTab('アーカイブ');
+expect(await action.isItemVisible(targetName)).toBeTruthy();
+await action.permanentDeleteAll();
+expect(await action.isItemHidden(targetName)).toBeTruthy(); // 後始末の空振りも検知
+```
+
 ## AI生成コードの警戒パターン
 
 - `.catch(() => false)` が5箇所以上 → AIコピペを疑う

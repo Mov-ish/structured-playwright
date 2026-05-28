@@ -197,6 +197,33 @@ await page.getByRole('main').getByRole('tablist').waitFor({ state: 'visible' });
 await sideMenu.click();
 ```
 
+### 中身が空のタブ切替（Archive / 削除済み / 未読 等）
+
+| 試したこと | 結果 | 理由 |
+|-----------|------|------|
+| `getByRole('tab', { name: 'アーカイブ' }).click()` をいきなり呼ぶ | ❌ | 中身が空のとき多くの UI ライブラリは Tab に `aria-disabled="true"` を付与する。`click()` は actionable 待ちで **test timeout までハング**する（ハング偽陽性） |
+| 切替前に `tab.isEnabled()` で事前ガード | ✅ | 空時に即 expect 失敗 → 真因（前段のフローが効いていない 等）が即判明 |
+
+→ 詳細は `.claude/skills/e2e-locator/ant-design-tabs-disabled.md` / `.claude/rules/prohibited-patterns.md`「ハングという形の偽陽性」参照。
+
+### Cleanup フェーズの正直な検証
+
+`permanentDeleteAll()` / `clearAll()` 等の「全件削除」操作は対象が無くても素通りするため、**前後で対象の存在/消失を expect する**ことで空振り（偽陽性）を防ぐ。
+
+| 試したこと | 結果 | 理由 |
+|-----------|------|------|
+| `switchTab('アーカイブ')` → `permanentDeleteAll()` のみ | ❌ | アーカイブが空でも素通りして Pass する偽陽性 |
+| 削除前: 対象が存在する `expect(isXxxVisible).toBeTruthy()` + 削除後: 対象が消えた `expect(isXxxHidden).toBeTruthy()` | ✅ | 削除フローが本当に動いた証跡が残る |
+
+```typescript
+// ✅ 偽陽性ゼロの cleanup パターン
+expect(await action.hasItemsInTab('アーカイブ')).toBeTruthy();   // タブ切替前ガード
+await navigationAction.switchTab('アーカイブ');
+expect(await action.isItemVisible(targetName)).toBeTruthy();     // 対象がアーカイブに実在
+await action.permanentDeleteAll();
+expect(await action.isItemHidden(targetName)).toBeTruthy();      // 完全削除されたことを検証
+```
+
 ---
 
 ## §6. AI作業手順（SOP）
