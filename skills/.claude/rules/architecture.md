@@ -72,6 +72,11 @@ readonly emailInput: Locator;
 `waitFor()` + try-catch で boolean を返す状態確認メソッドは許可。
 `expect()` によるアサーション、`waitForTimeout()` による固定待機は禁止。
 
+**verify メソッド（boolean を返す状態確認）には固定待機を置かない。**
+固定待機は操作メソッド（void）側に集約し、verify は **観測のみ** にする。
+verify 内の `waitForTimeout` は「判定の正しさが待ち時間に賭かる」「待機所有者が二重化する」
+偽陽性 / 偽陰性の温床。詳細は `prohibited-patterns.md`「verify 内の固定待機 — 待機は操作メソッドに集約」参照。
+
 ## Action層のステップログ
 
 Action層の各ステップは `this.step()` ヘルパーで記録する（`console.log`単体は禁止）。

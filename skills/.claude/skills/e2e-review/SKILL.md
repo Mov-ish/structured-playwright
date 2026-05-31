@@ -36,7 +36,8 @@ description: "E2Eコードレビュー用。PR確認・品質チェック時に�
 - [ ] 意味層の薄い要素に `:near()` / `svg[data-icon]` を使用
 
 ### 4層責務
-- [ ] Page Object: `readonly`（`private readonly`禁止）、expect/waitForTimeout未使用
+- [ ] Page Object: `readonly`（`private readonly`禁止）、expect 未使用
+- [ ] **Page Object verify メソッド（boolean を返す状態確認）内に `waitForTimeout` を置いていないか** — 待機は操作メソッド（void）側に集約。verify 内固定待機は判定の正しさが待ち時間に賭かる + 二重待機の温床（`prohibited-patterns.md`「verify 内の固定待機 — 待機は操作メソッドに集約」参照）
 - [ ] Action: 各ステップ`this.step()`でログ記録（`console.log`単体は禁止）、expect未使用、LoginAction はログイン成功検証あり
 - [ ] Fixture: `stepCounter` が worker スコープで定義されている（`scope: 'worker'`）
 - [ ] Test: Fixture経由import、Fixture引数でAction取得、Locator直書きなし
