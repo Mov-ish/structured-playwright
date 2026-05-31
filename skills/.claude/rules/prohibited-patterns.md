@@ -17,6 +17,7 @@
 | Action層で `expect()` | アサーションはTest層の責務 | `waitFor()` ベースの verify メソッド |
 | Test層で Locator 直接記述 | UIは Page Object層の責務 | Action の verify メソッド経由 |
 | Page Objectで `waitForTimeout()` | 固定待機はAction層で行う | `waitFor()` + try-catch |
+| verify メソッド (boolean) 内の `waitForTimeout()` | 判定の正しさが待ち時間に賭かる + 二重待機（下記参照） | 待機は操作メソッド側に集約、verify は観測のみ |
 | 意味層の薄い要素にセマンティックLocator | 属性不足で動作しない | `:near()` / `svg[data-icon]` |
 | `has-text` をスコープなしで使用 | 同じ文言が複数→誤爆 | `text-is` or Local Universe で絞る |
 | モーダルを `page` 全体で探索 | 背景ボタン誤クリック | `[role="dialog"]` で閉じ込め |
@@ -78,6 +79,66 @@ async hasValue(): Promise<boolean> {
 ```
 
 **判断基準**: catch ブロックが捕まえるのは「要素の状態遷移のタイムアウト」だけか？ Yes なら許容、No なら禁止。
+
+## verify 内の固定待機 — 待機は操作メソッドに集約
+
+**boolean を返す検証メソッド (verify) の内部に `waitForTimeout` を置かない。** 同じ Page Object でも「操作メソッド (void) 末尾の固定待機」とは性質が異なる。
+
+| | 操作メソッド (void) | verify メソッド (boolean) |
+|---|---|---|
+| 例 | `selectItem()` / `deleteItem()` | `isItemVisible()` / `isItemAbsent()` |
+| 責務 | DOM を変える action | 現在の状態を観測して真偽を返す |
+| 待機対象 | **自メソッド内の action の余波**（click 直後の再描画） | 自メソッドの外で起きた変化（他のメソッドの action 結果） |
+| 待ち時間不足の影響 | 後続操作が遅延するだけ | **判定が誤って通る**（偽陰性 / 偽陽性で flaky） |
+| 待機所有者 | action の付随処理 | （本来は呼び出し側のフロー制御） |
+| 判定 | 既存慣習として許容 | ❌ **禁止** |
+
+### なぜ禁止か
+
+1. **判定の正しさが待ち時間に賭かる** — verify の責務は「観測して真偽を返す」こと。固定 sleep が混ざると `SPA_RENDERING(2s)` で削除後遷移が終わらなければ、まだ消えていない値を読んで「消えた」と返却（flaky な偽陰性）。
+2. **二重待機の症状** — 操作メソッド (`deleteItem()`) 末尾と verify (`isItemAbsent()`) 冒頭が **同じ「削除後の描画安定」を別々に待つ** ことになる。待機対象が同じなのに所有者が分散しているのは層の責務が崩れているサイン。
+3. **層分離の意図** — 「待機戦略（いつ・何を・どれだけ待つか）はフロー制御の関心事」。verify が「外の action の余波」を待ち始めると、フロー制御の関心事が観測メソッドに漏れ込む。
+4. **AI 拡散リスク** — 1 件でも残っていると AI が「正解パターン」として模倣・増殖する（`locator-principles.md` の AI 行動規範と同構図）。
+
+### コード例
+
+```typescript
+// ❌ 禁止: verify 内の固定待機 — 判定の正しさが 2 秒に賭かる
+async isItemAbsent(name: string): Promise<boolean> {
+  await this.page.waitForTimeout(TIMEOUTS.SPA_RENDERING); // ← 外部 action の結果を待つ
+  const names = await this.collectItemNames();
+  return !names.includes(name);
+}
+
+// ✅ 正しい: 待機は操作メソッド側に集約、verify は観測のみ
+async deleteItem(): Promise<void> {
+  await this.itemDeleteButton.click();
+  await this.confirmDeleteButton.click();
+  await this.page.waitForTimeout(TIMEOUTS.SPA_RENDERING); // ← 自 action の余波待ち（慣習）
+}
+async isItemAbsent(name: string): Promise<boolean> {
+  const names = await this.collectItemNames();
+  return !names.includes(name);
+}
+```
+
+### 「遷移検証」パターンで偽陽性も同時に排除する
+
+verify が「ある状態であること」を返すなら、**呼び出し側で「変化前後」を両方検証する**:
+
+```typescript
+// 削除前: 対象が存在する（この前提検証がないと「削除で消えた」と言えず偽陽性）
+expect(await itemAction.isItemPresent(name)).toBeTruthy();
+await itemAction.deleteItem();
+// 削除後: 対象が消えた
+expect(await itemAction.isItemAbsent(name)).toBeTruthy();
+```
+
+「`isAbsent` 単独」では「最初から存在しなかった」のか「削除で消えた」のかを区別できない。`isPresent → action → isAbsent` の対で観測することで偽陽性（action が効かなくても緑）を排除する。
+
+### 例外
+
+判定対象が「状態遷移のタイムアウト」そのものの場合、`waitFor({state:'visible'/'hidden'})` + try-catch は許可（`architecture.md`「Page Object で許可される待機」参照）。これは「観測そのものに待機戦略が含まれる」ケースで、`waitForTimeout` のような盲目的な固定待機とは別物。
 
 ## テスト条件の黙殺禁止（Silent Skip）
 
