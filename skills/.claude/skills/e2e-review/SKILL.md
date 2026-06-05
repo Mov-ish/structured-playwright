@@ -36,7 +36,7 @@ npx tsc --noEmit; echo "exit: $?"
 # 2. Action 層への Locator 直書き検出（4層境界違反）— ヒットは全て違反
 #    Locator は Page Object 層にだけ存在してよい（rules/architecture.md「pages/ = Locatorはここだけ」）。
 #    レシーバを問わず .locator( / .getBy*( を拾う（this.page 限定にすると複数行記法・別レシーバ経由を取りこぼす）。
-grep -rnE "\.(locator|getByRole|getByText|getByLabel|getByPlaceholder|getByTestId|getByTitle|getByAltText)\(" src/actions/
+grep -rnE "\.(locator|getBy[A-Za-z]+)\(" src/actions/
 
 # 3. .catch 隠蔽パターン（詳細は §4）
 grep -rn "\.catch(() => false)\|\.catch(() => true)" src/
