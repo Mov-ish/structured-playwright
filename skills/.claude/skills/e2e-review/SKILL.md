@@ -10,15 +10,46 @@ description: "E2Eコードレビュー用。PR確認・品質チェック時に�
 
 ## §1. レビュー手順
 
-1. §2のMUST FIXチェックリストを上から確認
-2. `grep -rn ".catch(() =>" src/` で§4のパターン検出
+1. **§2.0 構文ゲートのコマンドを実行し、出力を確認する**（読むだけのチェックより先。機械的に落とせるデブリを最初に潰す）
+2. §2のMUST FIXチェックリストを上から確認
 3. §3のSHOULD FIX確認
-4. Locator具体指摘が必要なら `/e2e-locator` Skill参照
-5. 指摘は「理由」+「正しい実装例」をセットで
+4. **§8 self-interrogation を作成者自身に自己申告させる**（grep で拾えないデブリ — 未使用追加物・PR本文との乖離・新規 `@deprecated`）
+5. Locator具体指摘が必要なら `/e2e-locator` Skill参照
+6. 指摘は「理由」+「正しい実装例」をセットで
+
+> **なぜコマンドを先に回すのか**: 「読むだけ」のルールは注意の希釈で素通りする（自己レビュー1往復を通過した後でも tsc エラー・Action 直書き Locator・未使用 export が master 直前まで残る事例が起きる）。grep / コマンドで落とせるものは人間の目視に頼らず機械で落とす。
 
 ---
 
 ## §2. MUST FIX（PR差し戻し基準）
+
+### §2.0 構文ゲート（コマンドで機械的に落とす — 最優先）
+
+> 以下は**必ず実行して出力を確認する**。チェックボックスを目視で埋めるのではなく、コマンドの結果で判定する。
+> 複数プロジェクトを含むワークスペースでは、対象プロジェクトのディレクトリに `cd` してから実行する。
+
+```bash
+# 1. 型チェック — exit 0 でなければ差し戻し
+#    （未使用変数・未使用 import・未使用パラメータ・型エラーを拾う。tsconfig は noUnusedLocals/noUnusedParameters 有効）
+npx tsc --noEmit; echo "exit: $?"
+
+# 2. Action 層への Locator 直書き検出（4層境界違反）— ヒットは全て違反
+#    Locator は Page Object 層にだけ存在してよい（rules/architecture.md「pages/ = Locatorはここだけ」）。
+#    レシーバを問わず .locator( / .getBy*( を拾う（this.page 限定にすると複数行記法・別レシーバ経由を取りこぼす）。
+grep -rnE "\.(locator|getBy[A-Za-z]+)\(" src/actions/
+
+# 3. .catch 隠蔽パターン（詳細は §4）
+grep -rn "\.catch(() => false)\|\.catch(() => true)" src/
+```
+
+- [ ] `npx tsc --noEmit` が **exit 0**（未使用 import/変数/パラメータ・型エラー ゼロ。tsc は bootstrap の DoD だけでなくレビューでも回す — テストが green でも tsc が落ちることがある）
+- [ ] Action 層に Locator 直書きが **0 件**（ヒットしたら Page Object に移し、Action はメソッド経由で呼ぶ）
+  - **新規追加は当然不可**。既存ヒット（負債）も**例外なく違反**として扱う — 「既存だから OK」を許すと AI が既存コードを模倣して同じ違反を再生産するため（AI 先行模倣性）。定数経由（`SELECTORS.MODAL` 等）や `getByRole(...)` のセマンティックなものも、Locator が Action にある時点で違反
+  - **grep はレシーバを問わず `.locator(` / `.getBy*(` を拾う形にする**。`this.page.` 限定にすると ①`this.page` と `.locator` が別行の複数行記法、②`modal.locator(...)` のような別レシーバ経由、を取りこぼし実際の違反の一部しか検出できない（= 目視より悪い偽の安心を生む）。PO から受け取った Locator への `.click()`/`.nth()` 等は `.locator(`/`.getBy(` を含まないので誤検出しない
+  - 既存負債の一括解消は別途追跡。それまでの間にヒットが残っていても「既存だから残してよい」とは判断しない
+- [ ] `.catch(() => false)` / `.catch(() => true)` が 5 箇所以上ないか（§4参照）
+
+> 未使用 **export**（どのテストからも呼ばれないメソッド・PO クラス）は tsc では拾えない（`noUnusedLocals` はローカル変数/import まで）。これは §8 self-interrogation で作成者に自己申告させる。
 
 ### セキュリティ
 - [ ] 認証情報がハードコードされていない
@@ -38,7 +69,7 @@ description: "E2Eコードレビュー用。PR確認・品質チェック時に�
 ### 4層責務
 - [ ] Page Object: `readonly`（`private readonly`禁止）、expect 未使用
 - [ ] **Page Object verify メソッド（boolean を返す状態確認）内に `waitForTimeout` を置いていないか** — 待機は操作メソッド（void）側に集約。verify 内固定待機は判定の正しさが待ち時間に賭かる + 二重待機の温床（`prohibited-patterns.md`「verify 内の固定待機 — 待機は操作メソッドに集約」参照）
-- [ ] Action: 各ステップ`this.step()`でログ記録（`console.log`単体は禁止）、expect未使用、LoginAction はログイン成功検証あり
+- [ ] Action: 各ステップ`this.step()`でログ記録（`console.log`単体は禁止）、expect未使用、**Locator 直書きなし（§2.0 で grep 検出）**、LoginAction はログイン成功検証あり
 - [ ] Fixture: `stepCounter` が worker スコープで定義されている（`scope: 'worker'`）
 - [ ] Test: Fixture経由import、Fixture引数でAction取得、Locator直書きなし
 - [ ] 新規Action → Fixtureに登録済み、かつ TODO → 実装済みセクションに昇格済み
@@ -170,3 +201,46 @@ cat test-results/report.json | jq '.stats'
 | timeout で kill | 個別 test は ✓ でも全体は failed | サマリー行を見て判定 |
 
 **ルール**: 上記いずれかが疑われる場合は「Pass」と報告せず、**再実行を提案**する。ユーザーに「全テスト合格」と伝えて良いのは、3 点の確認が揃ったときのみ。
+
+---
+
+## §8. self-interrogation（PR 化前の自己申告 — grep で拾えないデブリ）
+
+§2.0 のコマンドは構文・境界デブリを機械的に落とす。だが **「呼ばれない追加物」「PR本文と diff の乖離」「不要な互換コード」は grep では拾えない**。作成者自身（AI 含む）に PR 化前に以下を**明文で自己申告**させる。「無い」で済ませず、列挙して各々に理由を添える。
+
+### Q1. 未使用の追加物を全列挙し、各々の「残す理由」を述べよ
+
+本 PR で**追加**した次のうち、**どのテストからも呼ばれていないもの**を全て列挙する。各々について「将来のテストで使う予定（どのテストか明記）」か「今すぐ削除すべき」かを判断する。
+
+- 追加した public メソッド（Action / Page Object）
+- 追加した Page Object クラス・ファイル
+- 追加した env キー・constants の定数
+- 追加した関数引数・オプション
+
+> 「将来使うかも」で残すなら **どのテストでいつ使うか**を書く。書けないものは dead code として削除する。
+
+```bash
+# 補助: 追加した export 名が src/ 内で他から参照されているか確認する例
+#   定義行を除いて 0 件なら未使用の疑い
+grep -rn "SomeMethodName\|SomePageClass" src/   # ← 定義ファイルのヒットは除いて数える
+```
+
+### Q2. PR本文と `git diff --name-only` を突き合わせ、食い違いを指摘せよ
+
+```bash
+git diff --name-only main...HEAD
+```
+
+- PR本文が言及している変更（「○○を追加」等）が **実際に diff に存在するか**
+- diff にあるのに本文で説明されていない変更がないか
+- **存在しないテスト・機能を主張していないか**
+
+### Q3. 本 PR で新規追加した `@deprecated` がないか確認せよ
+
+```bash
+git diff main...HEAD | grep -n "@deprecated"
+```
+
+- `@deprecated` は「既存の利用者がいるから消せない」ものに付ける互換マーカー。
+- **本 PR で新規に追加したコードに `@deprecated` が付いていたら矛盾**（新規＝互換対象となる既存利用者がいない）→ そのコードは最初から不要なので削除する。
+- 既存コードの `@deprecated`（前の PR で付いたもの）はこの限りではない。
