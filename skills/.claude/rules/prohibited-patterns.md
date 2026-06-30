@@ -2,37 +2,70 @@
 
 このファイルのパターンは**いかなるタスクでも**使用してはならない。
 
+> **機械検出**: grep 可能なパターンは `npm run gate`（`scripts/gate.sh`）が exit code で機械判定する。本ファイルの役割は「禁止 → 代替」の生成時誘導と、gate で判定できない項目（ordinal A/B・try-catch 境界・Silent Skip 等）の判定基準の提供。
+
 ## コード禁止パターン
 
-| 禁止 | 理由 | 代替 |
-|------|------|------|
-| `text=ログイン` 記法 | プロジェクトで動作しない | `:has-text("ログイン")` or `getByRole` |
-| XPath (`//div/span`) | 構造依存・AI誤生成の温床 | CSS + セマンティック |
-| CSS構造セレクタ (`div > div > button`) | DOM揺れで即破壊 | 意味ベース + Local Universe |
-| `.first()` コメントなし | 偶然の固定化、保守不能 | `:near()` / 具体セレクタ / コメント+TODO付き |
-| `.catch(() => false)` / `.catch(() => true)` | タイムアウト隠蔽・false positive | 下記「try-catch の許容/禁止の境界」参照 |
-| `private readonly` でLocator定義（Page Object層） | デバッグ困難 | `readonly`（public） |
-| `import { test } from '@playwright/test'` | Fixture未経由 | `from '../fixtures/app.fixture'` |
-| `new XxxAction(page)` をTest内で直接 | 依存が明示されない | Fixture引数で受け取る |
-| Action層で `expect()` | アサーションはTest層の責務 | `waitFor()` ベースの verify メソッド |
-| Test層で Locator 直接記述 | UIは Page Object層の責務 | Action の verify メソッド経由 |
-| Page Objectで `waitForTimeout()` | 固定待機はAction層で行う | `waitFor()` + try-catch |
-| verify メソッド (boolean) 内の `waitForTimeout()` | 判定の正しさが待ち時間に賭かる + 二重待機（下記参照） | 待機は操作メソッド側に集約、verify は観測のみ |
-| 意味層の薄い要素にセマンティックLocator | 属性不足で動作しない | `:near()` / `svg[data-icon]` |
-| `has-text` をスコープなしで使用 | 同じ文言が複数→誤爆 | `text-is` or Local Universe で絞る |
-| モーダルを `page` 全体で探索 | 背景ボタン誤クリック | `[role="dialog"]` で閉じ込め |
-| module スコープ乱数 + 複数 `test()` 暗黙依存 | 部分実行不可・別TC再利用不可（下記参照） | 引数化 / Setup Action / `beforeAll`（`architecture.md` 参照） |
-| Action 内で module スコープ変数を直接参照 | 別 TC から呼ぶと挙動が変わる | 引数で受け取る |
+gate 列: ✓ = `npm run gate` が機械検出（exit 1）/ ⚠️ = gate が警告として可視化（要目視）/ — = 判断系（本ファイルの判定基準で判断）
+
+| 禁止 | 理由 | 代替 | gate |
+|------|------|------|:---:|
+| `text=ログイン` 記法 | プロジェクトで動作しない | `:has-text("ログイン")` or `getByRole` | ✓ |
+| XPath (`//div/span`) | 構造依存・AI誤生成の温床 | CSS + セマンティック | ✓ |
+| CSS構造セレクタ (`div > div > button`) | DOM揺れで即破壊 | 意味ベース + Local Universe | — |
+| ordinal セレクタ（`.first()` / `.last()` / `.nth()`）コメントなし | 偶然の固定化・保守不能（並び替え/要素追加で破壊） | 下記「ordinal セレクタの許容境界」参照（用途で A=コメント+TODO / B=理由コメントのみ に分岐） | ⚠️ |
+| `.catch(() => false)` / `.catch(() => true)` | タイムアウト隠蔽・false positive | 下記「try-catch の許容/禁止の境界」参照 | ✓ |
+| `private readonly` でLocator定義（Page Object層） | デバッグ困難 | `readonly`（public） | ✓ |
+| `import { test } from '@playwright/test'` | Fixture未経由 | `from '../fixtures/app.fixture'` | ✓ |
+| `new XxxAction(page)` をTest内で直接 | 依存が明示されない | Fixture引数で受け取る | ✓ |
+| Action層で `expect()` | アサーションはTest層の責務 | `waitFor()` ベースの verify メソッド | ✓ |
+| Action層 / Test層で Locator 直接記述 | Locator は Page Object 層の責務 | PO に移しメソッド経由 / Action の verify メソッド経由 | ✓ |
+| Page Objectで `waitForTimeout()` | 固定待機はAction層で行う | `waitFor()` + try-catch | ⚠️ |
+| verify メソッド (boolean) 内の `waitForTimeout()` | 判定の正しさが待ち時間に賭かる + 二重待機（下記参照） | 待機は操作メソッド側に集約、verify は観測のみ | — |
+| 意味層の薄い要素にセマンティックLocator | 属性不足で動作しない | `:near()` / `svg[data-icon]` | — |
+| `has-text` をスコープなしで使用 | 同じ文言が複数→誤爆 | `text-is` or Local Universe で絞る | — |
+| モーダルを `page` 全体で探索 | 背景ボタン誤クリック | `[role="dialog"]` で閉じ込め | — |
+| `locator(SELECTORS.MODAL).last()` ハイブリッド | hidden を除外しない属性セレクタに stale 対策の `.last()` を貼る最悪の組合せ（下記参照） | アクティブモーダルは `getByRole('dialog').last()` / 単一スコープは `.last()` なしの `SELECTORS.MODAL` | ✓ |
+| module スコープ乱数 + 複数 `test()` 暗黙依存 | 部分実行不可・別テスト再利用不可（下記参照） | 引数化 / Setup Action / `beforeAll`（`architecture.md` 参照） | ⚠️ |
+| Action 内で module スコープ変数を直接参照 | 別テストから呼ぶと挙動が変わる | 引数で受け取る | — |
+
+## ordinal セレクタの許容境界（`.first()` / `.last()` / `.nth()`）
+
+ordinal は「偶然を排除する」原則（`locator-principles.md`）の対象だが**全面禁止は誤り** — 用途で2カテゴリに分岐する。
+
+| カテゴリ | 例 | 性質 | 扱い |
+|---------|----|------|------|
+| **A: 曖昧マッチの応急処置** | 複数マッチ → `.first()` | 偶然の固定化（並び替え・要素追加で破壊） | 最終手段。ピラミッド上位を先に試す + 理由コメント **+ TODO** |
+| **B: フレームワークの不変条件** | `getByRole('dialog').last()` = アクティブモーダル | z-order = DOM append 順という実在の不変条件を符号化 | 下記①②を両方満たす場合のみ許容。理由コメント必須・**TODO 不要** |
+
+**判断基準**: 「たまたま位置で選んでいる（A）」のか「不変条件で位置が意味を持つ（B）」のか。
+
+**B 判定条件（両方必須。片方でも欠ければ A 扱い）**:
+1. **フレームワーク仕様として検証可能** — UI ライブラリの公開挙動・DOM 構築規則で根拠を言語化できる（「たぶん末尾」という経験則は B でない）
+2. **代替実装が物理的に存在しない** — 優先順位ピラミッドの上位手段で一意特定できない（できるなら A = 消す対象）
+
+> **WHY（条件を明示する理由）**: 条件がないと過剰 B 判定で TODO なしコメントが量産される。**迷ったら A** に倒す。
+
+### アクティブモーダルのイディオム — `activeDialog()` と `SELECTORS.MODAL` の使い分け
+
+`SELECTORS.MODAL`（`[role="dialog"]`）と `activeDialog()`（`getByRole('dialog').last()`）は**競合ではなく役割が違う**。
+
+| 用途 | 使うもの | 理由 |
+|------|---------|------|
+| **stale dialog が溜まる中から「最後に開いた＝アクティブ」を取る** | `getByRole('dialog').last()` | `getByRole` は hidden を自動除外 → stale 残骸に堅牢 |
+| **単一モーダルにスコープして中の要素を取る** | `SELECTORS.MODAL`（`[role="dialog"]`） | Local Universe の宇宙定数。複数ファイルで共通管理 |
+| **ハイブリッド `locator(SELECTORS.MODAL).last()`** | ❌ **禁止** | hidden を除外しない属性セレクタに stale 対策の `.last()` を貼る最悪の組合せ |
 
 ## 値の禁止パターン
 
-| 禁止 | 理由 | 代替 |
-|------|------|------|
-| タイムアウト数値ハードコード (`2000`, `10000`) | 保守性低下 | `TIMEOUTS.SPA_RENDERING` 等の定数 |
-| URLパターンハードコード (`'**/login**'`) | 環境変更時の修正漏れ | `URL_PATTERNS.LOGIN` 等の定数 |
-| 共通セレクタハードコード (`'[role="dialog"]'`) | 一貫性欠如 | `SELECTORS.MODAL` 等の定数 |
-| 認証情報ハードコード | セキュリティリスク | `.env` + `EnvConfig` |
-| `waitForTimeout` に理由コメントなし | 意図不明で保守不能 | TIMEOUTS定数 + 理由コメント必須 |
+| 禁止 | 理由 | 代替 | gate |
+|------|------|------|:---:|
+| タイムアウト数値ハードコード (`2000`, `10000`) | 保守性低下 | `TIMEOUTS.SPA_RENDERING` 等の定数 | ✓ |
+| URLパターンハードコード (`'**/login**'`) | 環境変更時の修正漏れ | `URL_PATTERNS.LOGIN` 等の定数 | ✓ |
+| 共通セレクタハードコード (`'[role="dialog"]'`) | 一貫性欠如 | `SELECTORS.MODAL` 等の定数 | — |
+| 認証情報ハードコード | セキュリティリスク | `.env` + `EnvConfig` | — |
+| `waitForTimeout` に理由コメントなし | 意図不明で保守不能 | コメントは**宣言元（constants.ts）に置く** | ⚠️ |
+| `Date.now()` 単独で一意テストデータ名を生成 | 並列ワーカー（別プロセス）が同一 ms で衝突 | `uniqueId()`（下記「一意テストデータ名は uniqueId() で生成する」参照） | ✓ |
 
 ## try-catch の許容/禁止の境界
 
@@ -243,12 +276,42 @@ test.describe('TC-XX', () => {
 
 ### 判定基準
 
-- module スコープ（`describe` の外）に `Date.now()` などの動的値を持つ → ❌
+- module スコープ（`describe` の外）に動的値（`uniqueId()` / `Date.now()` 等）を持つ → ❌
 - Action が module スコープ変数を直接参照する → ❌
-- `test()` の中だけで完結する乱数（`const random = Date.now()` を `test()` 内で宣言） → ✅
+- `test()` の中だけで完結する一意 ID（`const random = uniqueId()` を `test()` 内で宣言） → ✅（一意性は `uniqueId()` で確保。`Date.now()` 単独は ❌ → 「一意テストデータ名は uniqueId() で生成する」参照）
 - `test.beforeAll` でデータ準備し、`describe` スコープ変数 で共有 → ✅
 - Setup Action + Fixture でデータ準備 → ✅（推奨、`architecture.md` 参照）
 
 ### 例外
 
 「TC全体が1つの長いユーザーストーリーで、最初から最後まで通しで動くことが本質」のテストは、`test()` を分割せず **単一の `test()` 内で全 Phase を実行する** ことで暗黙依存を回避する。Phase 分割が欲しいなら `test.step()` または Action 単位の粒度で表現する。
+
+## 一意テストデータ名は uniqueId() で生成する（Date.now() 単独依存禁止）
+
+テストデータ名の一意性を **`Date.now()` のミリ秒だけに依存してはならない**。
+
+> **スコープ軸とは別問題**: これは上の「テスト間データ依存」（module スコープ vs `test()` 内スコープ）とは**直交する独立論点**。`test()` 内に置いても `Date.now()` 単独なら並列ワーカーで衝突する。両方を満たす必要がある。
+
+### 何が問題か
+
+**WHY**: 並列実行では各ワーカーが別プロセスのため同一 ms に同名データが生成され、`getByText` 等の複数マッチ（strict mode violation）で落ちる。単独実行では顕在化せず、**CI 並列で初めて flaky として現れる**。
+
+| 弊害 | 具体例 |
+|------|-------|
+| 並列衝突 | Worker A と Worker B が同一 ms に同名リソースを生成 → `getByText` が 2 要素マッチ |
+| プレフィックス共通で衝突 | `アイテム名${random}` が別テストでも同プレフィックス → 同 ms なら衝突 |
+| `.slice()` で悪化 | `Date.now().toString().slice(-6)` は約1000秒周期で再衝突 |
+
+### 判定基準
+
+| パターン | 判定 |
+|---|---|
+| `const random = Date.now().toString()` 単独で一意名を作る | ❌ |
+| `Date.now().toString().slice(-6)` 等で桁を削る | ❌（衝突確率が桁違いに上がる） |
+| `const random = uniqueId()`（ms + ランダム）で生成 | ✅ |
+
+### 正しい実装
+
+**雛形の正本 = `e2e-bootstrap` §4「src/utils/uniqueId.ts」**（ms の36進 + ランダム6桁を `padEnd` で固定長にした一意サフィックス）。
+
+> ※ テストコードでの `Math.random()` / `Date.now()` 利用自体は問題ない（一意**名生成**への単独使用だけが禁止）。

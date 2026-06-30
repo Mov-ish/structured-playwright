@@ -185,8 +185,10 @@ await navigationAction.switchTab('アーカイブ');
 **⚠️ モーダル閉鎖後の `[role="dialog"]` 残存（stale dialog）**: Ant Design Modal をはじめ多くの UI ライブラリのモーダルは、閉じても `[role="dialog"]` を持つ要素が DOM にしばらく残ることがある。複数モーダル経由フローや、同フローの再表示で `getByRole('dialog')` が複数マッチし、strict mode 違反でクリックできなくなる。
 → "最後に開いた dialog" を取る `activeDialog()` ヘルパーで吸収する。
 
+**置き場の指針**: 単一の Page Object 内でしか使わないなら当該 Page Object に置く。複数の Page Object で使い始める前に `BasePage` に `protected activeDialog()` として上げて重複定義を防ぐ。
+
 ```typescript
-// Page Object 内
+// 単一 Page Object 内
 activeDialog(): Locator {
   // DOM 末尾に積まれる最新モーダルを取る
   return this.page.getByRole('dialog').last();
@@ -195,6 +197,16 @@ activeDialog(): Locator {
 // 使用例
 await this.activeDialog().getByRole('button', { name: '削除する' }).click();
 ```
+
+**`activeDialog()` と `SELECTORS.MODAL` の使い分け**（競合ではなく役割が違う。canonical は `prohibited-patterns.md`「アクティブモーダルのイディオム」、本表は skill 層の実務クイックリファレンス）:
+
+| 用途 | 使うもの |
+|------|---------|
+| stale dialog の中から「最後に開いた＝アクティブ」を取る（`.last()` が要る） | `getByRole('dialog').last()`（`activeDialog()`）— getByRole は hidden 自動除外で stale に堅牢 |
+| 単一モーダルにスコープして中の要素を取る（`.last()` 不要） | `SELECTORS.MODAL`（`[role="dialog"]`）— Local Universe の宇宙定数 |
+| ハイブリッド `page.locator(SELECTORS.MODAL).last()` | ❌ 禁止（hidden 除外しない属性セレクタに stale 対策の `.last()` を貼る矛盾。詳細 `prohibited-patterns.md`「アクティブモーダルのイディオム」） |
+
+> `activeDialog()` の `.last()` は「フレームワーク不変条件（DOM 末尾＝最前面）」に基づくカテゴリB の ordinal。理由コメントは要るが TODO は不要（`prohibited-patterns.md`「ordinal セレクタの許容境界」）。
 
 **カードリストの Local Universe**: カード型 UI（Ant Design `.ant-card`, MUI `.MuiCard-root`, Tailwind 独自 card class など）で項目が並ぶ画面では、同じテキストがパンくず / サイドメニュー / 一覧で重複しがち。カード本体にスコープを絞ると安定する。
 
@@ -231,16 +243,41 @@ async clickUser(name: string) {
 }
 ```
 
-## §11. `.first()` 具体的な対応手順
+## §11. ordinal セレクタ（`.first()` / `.last()` / `.nth()`）の対応手順
 
-1. **最優先**: `data-testid`追加を開発チームに依頼
+ordinal は用途で2カテゴリに分かれ、要求が異なる（詳細 `prohibited-patterns.md`「ordinal セレクタの許容境界」）。
+
+### カテゴリA: 曖昧マッチの応急処置（`.first()` が典型）
+「複数マッチしたから位置で選ぶ」= 偶然の固定化。次の順で消す努力をし、消せなければ理由コメント **+ TODO**（順序は `locator-principles.md`「優先順位ピラミッド」に対応）。
+
+1. **最優先**: name / 完全一致（`getByRole(..., { name, exact: true })` / `:text-is()`）/ Local Universe で一意特定（セマンティック）
 2. **次善**: `:near()` で周辺テキストから特定
-3. **妥協**: 親要素で絞り込んでから `.first()`
-4. **最終**: `.first()` + 詳細コメント + TODO
+3. **妥協**: 親要素で絞り込んでから ordinal
+4. **最終**: ordinal + 詳細コメント + TODO
+
+> `data-testid` を開発チームに追加依頼するのは根本解決として有効だが長期施策。TODO に記載するのは可。
 
 ```typescript
-// やむを得ない場合の書き方
+// ❌ A をノーコメントで使う（最も多い違反）
+await this.page.locator(`:text-is("${name}")`).first().click();
+
+// ✅ A: ピラミッドで消せないか先に検討 → 無理なら理由 + TODO
+// リソース名は <a> + 内部 <span> の 2 要素にマッチ。先頭の <a> を取る
+// TODO: リソース名要素に data-testid 等が付与されたら .first() を排除する
+return this.page.locator(`:text-is("${name}")`).first();
+
+// ✅ A の別例: 候補が構造的に1つしかないことを確認した上での妥協
 // このダイアログには1つのチェックボックスのみ存在（YYYY-MM-DD確認）
-// TODO: data-testid="agreement-checkbox" の追加を依頼（Issue #XXX）
+// TODO: data-testid="agreement-checkbox" の追加を依頼
 page.locator('[role="dialog"] input[type="checkbox"]').first()
+```
+
+### カテゴリB: フレームワークの不変条件（`.last()` が典型）
+`.last()` が「最後に開いた＝最前面」のように z-order / DOM append 順という**実在の不変条件**を符号化している場合。代替が物理的に無いので消さない。**理由コメントは必須だが TODO は不要**（恒久的に正しい設計）。
+
+```typescript
+// 不変条件の説明のみ（B・TODO 不要）
+// モーダルライブラリは閉じても role="dialog" が DOM に残る。最後に開いたものが
+// DOM 末尾に積まれるため last() でアクティブなモーダルを取る
+this.page.getByRole('dialog').last()
 ```

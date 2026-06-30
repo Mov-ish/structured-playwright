@@ -2,6 +2,19 @@
 
 ## Locatorの本質（未知のパターンに遭遇したらここに立ち戻る）
 
+**前提: Locator は ElementHandle ではない**（Selenium / WebDriver 経験者が陥りがちな誤認）。
+Locator は CSS query (関数) を保持しているだけで element reference を保持しない。各 action
+（`.click()` / `.hover()` / `.fill()` 等）の時点で **DOM を毎回 fresh に再 query** する。
+そのため:
+- `const x = page.locator(...); await x.hover(); await x.click()` → 各 action で再 query
+- `page.locator(...).hover()` と `page.locator(...).click()` を別々に書く → 同上、毎回再 query
+- 上記 2 つは **機能的に等価**。Selenium で発生する「stale element reference」問題は
+  Playwright Locator では原理的に発生しない。
+- 変数化するかどうかは **DRY / 可読性 / 保守時の更新忘れ防止** の判断であって、
+  「DOM 再描画で別要素を掴むリスク」回避ではない。
+
+以下の 3 原則は、この前提を踏まえた上で Locator を設計するための思想。
+
 **1. 未来値（Future）である**
 Locatorは今DOMに要素が存在しなくてもよい。遅延評価・自動待機・自動リトライを内包する「未来に成立する条件式」。
 → `isVisible()`（即時評価）より`waitFor()`（未来値評価）が適切な場面が多い。
@@ -20,7 +33,7 @@ Locatorは今DOMに要素が存在しなくてもよい。遅延評価・自動�
 |------|---------|
 | **意味を捉える（Semantic Priority）** | UI変更時のLocator崩壊。意味は最も変更されにくい層 |
 | **宇宙を限定する（Local Universe）** | 同一文言の誤爆。「保存」が背景とモーダルに2つある場面 |
-| **偶然を排除する（Deterministic）** | `.first()`によるUI並び替え・要素追加時の突然の破壊 |
+| **偶然を排除する（Deterministic）** | ordinal セレクタ（`.first()`/`.last()`/`.nth()`）によるUI並び替え・要素追加時の突然の破壊 |
 | **構造に依存しない（Anti-XPath）** | UIライブラリがdiv1つ追加しただけでの全Locator崩壊 |
 
 ## 優先順位ピラミッド（常にこの順で検討する）
@@ -84,7 +97,7 @@ Locatorは今DOMに要素が存在しなくてもよい。遅延評価・自動�
 
 ## AI生成時の行動規範
 
-1. **`.first()` を安易に提案しない** — 一意に特定できない場合は原因を調査し、`:near()` / Local Universe / 具体セレクタで解決を試みる
+1. **ordinal セレクタ（`.first()` / `.last()` / `.nth()`）を安易に提案しない** — まず `:near()` / Local Universe / 具体セレクタで解決を試みる。ordinal が必要な場合は「偶然の固定化（応急処置）」か「フレームワークの不変条件を符号化」かを区別し、いずれも理由コメントを付与する（前者は TODO も必須）
 2. **XPath を一切提案しない** — 構造依存の否定は思想レベルの原則
 3. **優先順位ピラミッドに逐次従う** — 上位で解決できないことを確認してから下位へ進む。いきなり構造セレクタに飛ばない
 4. **Locator には選定理由をコメントで付与する** — 例: `// role未設定・文言重複のためnear()で特定`

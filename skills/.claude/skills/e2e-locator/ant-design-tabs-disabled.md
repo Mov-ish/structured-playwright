@@ -50,7 +50,9 @@ await action.permanentDeleteAll();  // 上でハングするのでここに到�
 async isTabEnabled(tabName: string): Promise<boolean> {
   const tab = this.page.getByRole('tab', { name: tabName });
   await tab.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
-  return tab.isEnabled();  // aria-disabled を解釈して true/false 返却
+  // isEnabled() は Promise<boolean>。async 関数内では return await で明示する
+  // （スタックトレース改善と読み手の誤解防止）
+  return await tab.isEnabled();  // aria-disabled を解釈して true/false 返却
 }
 
 // Action 層: verify メソッド（boolean を返す。expect は書かない）
