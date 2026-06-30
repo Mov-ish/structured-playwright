@@ -7,7 +7,7 @@
 <a id="english"></a>
 ## English
 
-A maintainable and scalable Playwright test architecture focused on sustainability through clear separation of concerns across 4 distinct layers.
+Maintainable and scalable Playwright test design patterns—and the associated skills and rules to implement them—focused on maintainability, extensibility, and sustainability.
 
 ### Core Principles
 
@@ -27,7 +27,6 @@ This architecture separates concerns across 4 distinct layers:
 ### Documentation
 
 Detailed documentation (in Japanese) is available on Zenn:
-[Coming in February 2025]
 
 ### Author
 
@@ -44,7 +43,7 @@ MIT
 
 持続可能性のための構造化Playwright設計
 
-保守性・拡張性・継続性に焦点を当てた、メンテナブルでスケーラブルなPlaywrightテスト設計パターンです。
+保守性・拡張性・継続性に焦点を当てた、メンテナブルでスケーラブルなPlaywrightテスト設計パターンと、それを実現するためのSkills/rules群です。
 
 ### コアコンセプト
 
@@ -64,7 +63,7 @@ MIT
 ### ドキュメント
 
 詳細なドキュメントはZennで公開予定：
-[2025年2月公開予定]
+
 
 ### 著者について
 
