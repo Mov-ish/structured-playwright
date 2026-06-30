@@ -24,9 +24,6 @@ This architecture separates concerns across 4 distinct layers:
 3. **Layer 3: Tests** - Test scenarios and assertions (AAA pattern)
 4. **Layer 4: Config/Env** - Environment configuration and settings
 
-### Documentation
-
-Detailed documentation (in Japanese) is available on Zenn:
 
 ### Author
 
@@ -59,10 +56,6 @@ MIT
 2. **Layer 2: Actions** - ビジネスロジック・複数画面フロー  
 3. **Layer 3: Tests** - テストシナリオ・検証（AAAパターン）
 4. **Layer 4: Config/Env** - 環境設定・環境変数
-
-### ドキュメント
-
-詳細なドキュメントはZennで公開予定：
 
 
 ### 著者について
