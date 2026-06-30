@@ -11,7 +11,7 @@ import { test, expect } from '../fixtures/app.fixture'; // Test（Fixture経由�
 
 ## 定数の最小必須構造
 
-環境構築時に必ず含める定数。`e2e-bootstrap` §4 と一致。
+環境構築時に必ず含める定数。`e2e-bootstrap` §4 と一致。`SELECTORS.MODAL` は単一モーダルにスコープする宇宙定数（`.last()` なし — 下記「使い分け」参照）。
 
 ```typescript
 export const TIMEOUTS = {
@@ -53,6 +53,10 @@ AUTH_PASSWORD_INPUT: 'input[name="password"]',
 | 静的な値のみ | 動的な値（引数で変わるもの）→ Page Object 内で処理 |
 
 特定画面固有の Locator は Page Object の constructor 内で定義するのが正しい設計。
+
+### `SELECTORS.MODAL` と `activeDialog()` の使い分け
+
+`SELECTORS.MODAL`（`[role="dialog"]`）は **`.last()` を付けず単一モーダルにスコープする**用途専用。アクティブモーダルの曖昧性解消（`activeDialog()`）やハイブリッド禁止の詳細は重複記載を避け、**正本である `prohibited-patterns.md`「アクティブモーダルのイディオム — `activeDialog()` と `SELECTORS.MODAL` の使い分け」を参照**（使い分け表はそちらが canonical。本節は `SELECTORS.MODAL` の用途＝スコープ限定だけを説明し、アクティブモーダルの曖昧性解消は扱わない）。
 
 ## 新しい定数が必要な場合
 

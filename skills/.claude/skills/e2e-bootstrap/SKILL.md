@@ -11,6 +11,7 @@ description: "E2E環境構築用。新規セットアップ・Playwright導入�
 
 - `npm test` が実行できる（smokeが1本通る）
 - `npx tsc --noEmit` が通る（型エラー・未使用importがゼロ）
+- `npm run gate` が exit 0（機械ゲート — 正本は `scripts/gate.sh`）
 - Playwrightとブラウザ依存が揃っている
 - 4層アーキテクチャの最小ディレクトリが存在する
 - 認証情報は`.env`/CI環境変数で管理
@@ -27,6 +28,7 @@ src/
 ├── pages/           # Layer 1: 画面要素と操作（Locatorはここ）
 ├── fixtures/        # Fixture定義
 │   └── app.fixture.ts
+├── utils/           # uniqueId.ts / formatDate.ts 等（§4 参照）
 └── config/          # Layer 4: 環境差分・設定
     ├── env.ts
     └── constants.ts
@@ -46,7 +48,7 @@ import { LoginAction } from '../actions/LoginAction';
 //   loginAction  : ログイン
 //
 // TODO（未実装）:
-//   xxxAction    : 説明（対象TC番号）
+//   xxxAction    : 説明（対象TCや用途）
 type AppFixtures = { loginAction: LoginAction; };
 
 // Worker スコープ Fixture — stepCounter は describe 境界で自動リセットするため、
@@ -77,7 +79,7 @@ export const TIMEOUTS = {
 } as const;
 
 export const SELECTORS = {
-  MODAL: '[role="dialog"]',
+  MODAL: '[role="dialog"]',          // 単一モーダルにスコープする宇宙定数（.last() なし）
   SUBMIT_BUTTON: 'button[type="submit"]',
 } as const;
 
@@ -87,6 +89,39 @@ export const URL_PATTERNS = {
   LOGIN_PATH: '/login',
   // 例: AUTH_LOGIN: '**/auth.example.com/**',
 } as const;
+```
+
+**拡張例（プロジェクト固有の要素が増えたら追加）**:
+
+```typescript
+// TIMEOUTS 拡張例
+ELEMENT_VISIBLE: 5000,
+
+// SELECTORS 拡張例（複数画面で共通のセレクタのみ）
+AGREEMENT_CHECKBOX: 'input[type="checkbox"]:near(:text("同意する"))',
+AUTH_EMAIL_INPUT: 'input[name="username"]',
+AUTH_PASSWORD_INPUT: 'input[name="password"]',
+```
+
+### あわせて作る: src/utils/uniqueId.ts（一意テストデータ名）
+
+テストデータ名の一意性確保に必須（`Date.now()` 単独は並列ワーカー衝突 — 判定基準は `prohibited-patterns.md`「一意テストデータ名は uniqueId() で生成する」）。
+
+```typescript
+// src/utils/uniqueId.ts
+/**
+ * 並列ワーカー間でも衝突しない一意サフィックスを生成する。
+ * テストデータ名（リソース名・エントリ名など）の一意性確保に使う。
+ *
+ * 一意性を `Date.now()` のミリ秒だけに依存すると、`workers > 1` の並列実行で
+ * 別プロセスのワーカーが同一ミリ秒に生成して衝突する（テスト環境に同名データが並び
+ * `getByText` 等が複数マッチして落ちる）。ms の36進 + ランダム6桁で回避する。
+ * 詳細は `.claude/rules/prohibited-patterns.md`「一意テストデータ名は uniqueId() で生成する」参照。
+ */
+export function uniqueId(): string {
+  // slice(2, 8) は Math.random() の値次第で6文字未満になりうるため padEnd で6桁固定にする
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8).padEnd(6, '0')}`;
+}
 ```
 
 ---
@@ -164,7 +199,7 @@ export default function globalSetup() {
 
 ## §6. BaseAction / StepCounter 雛形
 
-全ActionはBaseActionを継承する。`step()`ヘルパーはコンソール（ユーザーストーリー粒度）と`test.step()`（HTMLレポート階層表示）を両方出力する。prefix（`[TC / Phase]`）は `test.info().titlePath` から自動導出される。
+全ActionはBaseActionを継承する。`step()`ヘルパーはコンソール（ユーザーストーリー粒度）と`test.step()`（HTMLレポート階層表示）を両方出力する。prefix（`[Suite / Phase]`）は `test.info().titlePath` から自動導出される。
 
 ### BaseAction.ts
 
@@ -191,7 +226,7 @@ export class BaseAction {
 
   /**
    * ステップ記録ヘルパー
-   * コンソール: [TC / Phase] Step N: ActionName - 詳細
+   * コンソール: [Suite / Phase] Step N: ActionName - 詳細
    * HTMLレポート: test.step() ネストで Action 内部詳細を階層表示
    *
    * 重要: fn() 実行中のエラーは catch せずそのまま伝播させる。
@@ -255,6 +290,7 @@ export class StepCounter {
   private mainNumber = 0;
   private lastDescribeKey: string | null = null;
 
+  /** Action の public メソッド開始時に呼ぶ。describe 境界でリセットしてから +1 */
   nextMain(): number {
     const currentKey = this.getDescribeKey();
     if (currentKey !== this.lastDescribeKey) {
@@ -265,6 +301,7 @@ export class StepCounter {
     return this.mainNumber;
   }
 
+  /** 現在のメイン番号（インクリメントせず参照のみ。step() 表示用） */
   get currentMain(): number {
     return this.mainNumber;
   }
@@ -273,7 +310,9 @@ export class StepCounter {
     try {
       const info = test.info();
       const parts = info.titlePath;
-      // file + describes を key に含めることで、別 file で同名 describe が混在しても衝突しない
+      // titlePath: [file, ...describes, test]
+      // key = file + describes（末尾の test 名を除く）。
+      // file を常に含めることで、別 file で同名 describe が混在しても衝突しない
       const keyParts = parts.slice(0, -1);
       return keyParts.length > 0 ? keyParts.join('|') : null;
     } catch {
@@ -283,14 +322,29 @@ export class StepCounter {
 }
 ```
 
+**prefix の構成**:
+- `test.info().titlePath` から自動導出（`[file, describe, test]` の順）
+- describe / test 名の `:` 前半をラベルとして採用（例: `'Suite-A: フロー名...'` → `'Suite-A'`）
+- `:` が無ければ名前全体を使用
+- ASCII `:` と全角 `：` の両方に対応（先に現れる方で分割）
+
 **出力例**:
 ```
-[TC-XX / Phase 1] Step 1: LoginAction - ログインページへ遷移
-[TC-XX / Phase 1] Step 1: LoginAction - 認証情報入力
-[TC-XX / Phase 1] Step 2: NavigationAction - メインメニューを開く
+コンソール:
+[Suite-A / Phase 1] Step 1: LoginAction - ログインページへ遷移
+[Suite-A / Phase 1] Step 1: LoginAction - 認証情報入力
+[Suite-A / Phase 1] Step 2: NavigationAction - メインメニューを開く
 ...
-[TC-XX / Phase 2] Step 21: LoginAction - ログインページへ遷移   ← describe 内で連番継続
+[Suite-A / Phase 2] Step 21: LoginAction - ログインページへ遷移   ← describe 内で連番継続
+
+HTMLレポート（test.step() ネスト — Action 内部詳細はこちらで階層表示）:
+  ログインページへ遷移
+  認証情報入力
+  送信ボタンクリック
+  ...
 ```
+
+> **番号の意味**: 番号は「同一 describe 内の Action 呼び出し順」。並列 workers では**各 worker が独立した StepCounter を持つ**ため、異なる describe の番号同士は比較できない（グローバル順序は読み取れない）。
 
 ---
 
@@ -306,9 +360,12 @@ TEST_USER_PASSWORD=
 
 ## §8. コーディング規約
 
-### package.json 必須devDependencies
+### package.json 必須devDependencies / scripts
 ```json
 {
+  "scripts": {
+    "gate": "bash scripts/gate.sh"
+  },
   "devDependencies": {
     "@playwright/test": "^1.50.0",
     "dotenv": "^16.4.0",
@@ -320,6 +377,8 @@ TEST_USER_PASSWORD=
 
 > `typescript` と `@types/node` がないと `npx tsc --noEmit` による型チェックが実行できない。
 > §1 Definition of Done の型チェック要件を満たすために必須。
+>
+> **`gate` script は必須**（機械ゲート）。CI で gate を走らせる場合は、`.github/workflows/gate.yml` 等にプロジェクトのディレクトリを追加すること。
 
 ### TypeScript設定（tsconfig.json）
 ```json
