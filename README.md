@@ -27,11 +27,15 @@ This architecture separates concerns across 4 distinct layers:
 
 ### Author
 
+**Ray-ish** ([@Mov-ish](https://github.com/Mov-ish))
+
 Developed through years of experience maintaining E2E test frameworks in the education technology sector.
 
 ### License
 
-MIT
+MIT — free to use, modify, and distribute. When redistributing, please keep the copyright notice (`Copyright (c) 2026 Ray-ish`) as required by the license.
+
+If this template helps your project, a mention in your README or blog — or a star — is always appreciated (welcome, not required).
 
 ---
 
@@ -60,9 +64,13 @@ MIT
 
 ### 著者について
 
+**Ray-ish**（[@Mov-ish](https://github.com/Mov-ish)）
+
 教育テクノロジー分野でのE2Eテスト基盤構築・運用の経験から、
 長期的に維持可能なテスト設計の重要性を実感し体系化。
 
 ### ライセンス
 
-MIT
+MIT ライセンスです。利用・改変・再配布は自由ですが、再配布の際はライセンス条件に従い著作権表示（`Copyright (c) 2026 Ray-ish`）を保持してください。
+
+このテンプレートが役に立ったら、README やブログでの言及・スターを歓迎します（義務ではなく、歓迎です）。
