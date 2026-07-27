@@ -2,48 +2,11 @@
 
 ## インポート必須（全ファイル共通）
 
-```typescript
-import { TIMEOUTS } from '../config/constants';     // 全ファイル
-import { SELECTORS } from '../config/constants';     // Page Object
-import { URL_PATTERNS } from '../config/constants';  // Action
-import { test, expect } from '../fixtures/app.fixture'; // Test（Fixture経由）
-```
+`test`/`expect` は `@playwright/test` からではなく `fixtures/app.fixture` 経由で import する。定数（TIMEOUTS / SELECTORS / URL_PATTERNS）は `../config/constants` から import する。定数形式の正本は `e2e-bootstrap` §4、Fixture 形式は `e2e-bootstrap/fixture-template.md`。
 
 ## 定数の最小必須構造
 
-環境構築時に必ず含める定数。`e2e-bootstrap` §4 と一致。`SELECTORS.MODAL` は単一モーダルにスコープする宇宙定数（`.last()` なし — 下記「使い分け」参照）。
-
-```typescript
-export const TIMEOUTS = {
-  SHORT: 3000, MEDIUM: 10000, LONG: 30000, DEFAULT: 10000,
-  AUTH_STABILIZATION: 2000, MODAL_ANIMATION: 1000,
-  SPA_RENDERING: 2000, REDIRECT: 3000,
-} as const;
-
-export const SELECTORS = {
-  MODAL: '[role="dialog"]',
-  SUBMIT_BUTTON: 'button[type="submit"]',
-} as const;
-
-export const URL_PATTERNS = {
-  LOGIN: '**/login**',
-  DASHBOARD: '**/dashboard**',
-  LOGIN_PATH: '/login',
-  // 例: AUTH_LOGIN: '**/auth.example.com/**',
-} as const;
-```
-
-## 拡張例（プロジェクト固有の要素が増えたら追加）
-
-```typescript
-// TIMEOUTS 拡張例
-ELEMENT_VISIBLE: 5000,
-
-// SELECTORS 拡張例（複数画面で共通のセレクタのみ）
-AGREEMENT_CHECKBOX: 'input[type="checkbox"]:near(:text("同意する"))',
-AUTH_EMAIL_INPUT: 'input[name="username"]',
-AUTH_PASSWORD_INPUT: 'input[name="password"]',
-```
+**雛形の正本 = `e2e-bootstrap` §4**（環境構築時に必ず含める TIMEOUTS / SELECTORS / URL_PATTERNS の完全形 + プロジェクト固有の拡張例。数値定数の宣言行コメント必須 — gate が機械検出）。rules はコードを持たない。`SELECTORS.MODAL` は単一モーダルにスコープする宇宙定数（`.last()` なし — 下記「使い分け」参照）。
 
 ## constants.ts に入れるもの / 入れないもの
 
@@ -71,13 +34,4 @@ AUTH_PASSWORD_INPUT: 'input[name="password"]',
 - `.env`は`.gitignore`に含める
 - `.env.example`をテンプレートとして用意
 - 本番環境の認証情報は絶対に含めない
-- コード内にハードコード厳禁
-
-```typescript
-// ❌
-const email = 'user@example.com';
-
-// ✅
-const env = EnvConfig.getTestEnvironment();
-const email = env.credentials.email;
-```
+- コード内にハードコード厳禁（必ず `.env` + `EnvConfig.getTestEnvironment()` 経由で取得）

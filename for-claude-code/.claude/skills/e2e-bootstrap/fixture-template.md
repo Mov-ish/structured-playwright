@@ -33,3 +33,33 @@ export { expect } from '@playwright/test';
 
 ---
 
+
+## Action カタログの書式
+
+fixture.ts の `AppFixtures` 型定義の直前に維持する（規約・ルールの正本は `architecture.md`「fixture.ts の Action カタログ規約」）:
+
+```typescript
+// === Action カタログ ===
+//
+// ■ loginAction (LoginAction)
+//   - execute(url, email, password)    ログイン
+//
+// ■ logoutAction (LogoutAction)
+//   - execute()                        ログアウト
+//
+// ■ navigationAction (NavigationAction)
+//   - selectWorkspace(wsName)          ワークスペース切替
+//   - switchRole(role)                 ロール切替
+//
+// ■ resourceAction (ResourceAction)
+//   - createResource(type, name)       リソース新規作成
+//   - editResource(name, opts)         リソース編集
+//   - publishResource()                リソースを公開
+//   - isPublished() → boolean          「公開中」ステータス確認
+//   ...
+//
+// === TODO（未実装） ===
+//   yyyAction  : 説明（対象テストケース番号）
+//
+type AppFixtures = { ... };
+```
