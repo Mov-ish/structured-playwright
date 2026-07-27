@@ -1,40 +1,14 @@
-# INDEX.md
-## 4層アーキテクチャ（第3層）— Doc-first 運用（汎用版）
+# docs/jp — 文書の入口
 
-このディレクトリは、AI（ClaudeCode / Codex / Cursor）と人間が **同じルールで** E2Eを構築・拡張するための文書体系です。
+このディレクトリの文書は 2 種類に分かれる。
 
----
+## 導入・運用（実装とともに更新される）
 
-## 最初に読む（フェーズ別の入口）
+- [`claude-code-guide.md`](./claude-code-guide.md) — **`for-claude-code/` 運用セットの導入ガイド**。前提条件・導入手順・運用フロー・チェックリストからテストができるまでのウォークスルー・カスタマイズ指針
 
-### Claude Code で運用する（推奨の入口）
-- `./claude-code-guide.md` — `for-claude-code/` 運用セットの導入・運用・ウォークスルー
+具体的な規範（禁止パターン・雛形・手順）の正本はドキュメントではなく [`for-claude-code/`](../../for-claude-code/README.md) の rules / skills / gate にある。
 
-### 環境構築（Bootstrap）
-- `./bootstrap.md`
+## 設計思想（実装が変わっても真であり続ける読み物）
 
-### テスト作成（Test Authoring）
-- `./test_creation_protocol.md`
-
----
-
-## 参照文書（正）
-
-### アーキテクチャ（理想構成）
-- `./E2ETest_Framework.md`
-
-### Locator Strategy（最終判断）
-- `./LOCATOR/Concept/`
-- `./LOCATOR/Universal/`
-- `./LOCATOR/productspecific/PRODUCT_A/`
-
----
-
-## 実装レシピ／トラブルシュート（直下側）
-- `CLAUDE_Selectors.md`（即効レシピ）
-- `CLAUDE_FAQ.md`（詰まったら）
-
----
-
-**最終更新**: 2026-02-02
-**管理者**: Ray Ishida
+- [`E2ETest_Framework.md`](./E2ETest_Framework.md) — **4 層アーキテクチャの設計思想**。なぜ層を分けるのか・境界はなぜ絶対か・偽陽性との戦い
+- [`LOCATOR/locator_strategy.md`](./LOCATOR/locator_strategy.md) — **Locator Strategy**。Locator は未来値である・意味空間で操作する・局所宇宙で探索する、という思想体系と優先順位ピラミッド
