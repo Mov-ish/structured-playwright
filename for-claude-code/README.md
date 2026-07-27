@@ -11,16 +11,16 @@
 ## クイックスタート
 
 1. **コピーするのは 3 つ**: このディレクトリの `.claude/` `scripts/` `CLAUDE.md` を、あなたのプロジェクトのルートへコピーする（この README と親リポジトリの他ファイルはコピー不要）
-2. `package.json` に gate を登録する:
+2. `package.json` に gate を登録し、依存をインストールする:
 
    ```json
    { "scripts": { "gate": "bash scripts/gate.sh" } }
    ```
 
-   devDependencies は typescript **5 系**を使う（gate の AST チェックが 5 系のコンパイラ API を前提とするため。詳細は導入ガイド）
+   devDependencies は typescript **5 系**を使う（gate の AST チェックが 5 系のコンパイラ API を前提とするため。詳細は導入ガイド）。登録したら `npm install` を実行する（未 install だと gate の AST チェックと tsc が偽 fail する）
 3. `CLAUDE.md` の「プロジェクト固有情報」欄を記入する（対象プロダクト・UI ライブラリ・認証方式・HTML 特性）
-4. `npm run gate` を一度実行する — 初回は「Rules 総量 baseline の凍結」を案内されるので、**人間が**指示どおり `.claude/rules-baseline` を作成する（AI エージェントには作成させない — 理由はガイド参照）
-5. Claude Code で `/e2e-bootstrap` を実行し、4 層の骨格（Fixture / BaseAction / constants / uniqueId）を生成する。既存の Playwright プロジェクトの 4 層変換も同じ skill が扱う
+4. Claude Code で `/e2e-bootstrap` を実行し、4 層の骨格（Fixture / BaseAction / constants / uniqueId / tsconfig）を生成する。既存の Playwright プロジェクトの 4 層変換も同じ skill が扱う。gate は `src/` の存在を前提とするため、**初回の gate 実行より先にこのステップ**（bootstrap の Definition of Done に「gate が exit 0」が含まれる = gate が通る状態を作り上げるのは bootstrap の責務）
+5. `npm run gate` を実行する — 初回は「Rules 総量 baseline の凍結」を案内されるので、**人間が**指示どおり `.claude/rules-baseline` を作成する（AI エージェントには作成させない — 理由はガイド参照）
 
 以降、テストを作るときは**原本**（テスト手順書 / チェックリスト / 受け入れ条件 / ユーザーストーリー）を渡して `/e2e-test-create`、レビューは `/e2e-review`、Locator で迷ったら `/e2e-locator`。
 

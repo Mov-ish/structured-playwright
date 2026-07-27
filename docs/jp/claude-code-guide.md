@@ -35,13 +35,17 @@
 }
 ```
 
+記入したら `npm install` を実行する。未 install のまま gate を回すと、AST チェック（typescript の解決）と末尾の tsc が偽 fail する。
+
 ### 2-3. CLAUDE.md の固有情報欄
 
 「プロジェクト固有情報（編集してください）」の 4 項目（対象プロダクト / UI ライブラリ / 認証方式 / HTML 特性）を記入する。ここが skills の判断（Locator 戦略・認証フロー実装）の入力になる。
 
 ### 2-4. baseline の凍結（人間が行う）
 
-初回の `npm run gate` は次のように案内する:
+**前提**: gate は `src/` の存在を前提とする（cwd ガードで即 fail）ため、`/e2e-bootstrap` で 4 層の骨格（src/ + tsconfig）を生成した**後**に実行する。gate が exit 0 で通る状態を作り上げるところまでが bootstrap の Definition of Done。
+
+bootstrap 後、初回の `npm run gate` は次のように案内する:
 
 ```
 ❌ Rules 常時ロード総量 → 初回セットアップ: 現在の実測値で .claude/rules-baseline を作成して
