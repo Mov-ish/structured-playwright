@@ -2,7 +2,7 @@
 
 このファイルのパターンは**いかなるタスクでも**使用してはならない。
 
-> **機械検出**: grep 可能なパターンは `npm run gate`（`scripts/gate.sh`）が exit code で機械判定する。本ファイルの役割は「禁止 → 代替」の生成時誘導と、gate で判定できない項目（ordinal A/B・try-catch 境界・Silent Skip 等）の判定基準の提供。
+> **機械検出**: grep 可能なパターンは `npm run gate`（`scripts/gate.sh`）が exit code で機械判定する。本ファイルの役割は「禁止 → 代替」の生成時誘導と、gate で判定できない項目（ordinal A/B/C・try-catch 境界・Silent Skip 等）の判定基準の提供。
 
 ## コード禁止パターン
 
@@ -13,7 +13,7 @@ gate 列: ✓ = `npm run gate` が機械検出（exit 1）/ ⚠️ = gate が警
 | `text=ログイン` 記法 | プロジェクトで動作しない | `:has-text("ログイン")` or `getByRole` | ✓ |
 | XPath (`//div/span`) | 構造依存・AI誤生成の温床 | CSS + セマンティック | ✓ |
 | CSS構造セレクタ (`div > div > button`) | DOM揺れで即破壊 | 意味ベース + Local Universe | — |
-| ordinal セレクタ（`.first()` / `.last()` / `.nth()`）コメントなし | 偶然の固定化・保守不能（並び替え/要素追加で破壊） | 下記「ordinal セレクタの許容境界」参照（用途で A=コメント+TODO / B=理由コメントのみ に分岐） | ✓ |
+| ordinal セレクタ（`.first()` / `.last()` / `.nth()`）コメントなし | 偶然の固定化・保守不能（並び替え/要素追加で破壊） | 下記「ordinal セレクタの許容境界」参照（用途で A=コメント+TODO / B・C=理由コメントのみ に分岐） | ✓ |
 | `.catch(() => false)` / `.catch(() => true)` | タイムアウト隠蔽・false positive | 下記「try-catch の許容/禁止の境界」参照 | ✓ |
 | `private readonly` でLocator定義（Page Object層） | デバッグ困難 | `readonly`（public） | ✓ |
 | `import { test } from '@playwright/test'` | Fixture未経由 | `from '../fixtures/app.fixture'` | ✓ |
@@ -31,20 +31,25 @@ gate 列: ✓ = `npm run gate` が機械検出（exit 1）/ ⚠️ = gate が警
 
 ## ordinal セレクタの許容境界（`.first()` / `.last()` / `.nth()`）
 
-ordinal は「偶然を排除する」原則（`locator-principles.md`）の対象だが**全面禁止は誤り** — 用途で2カテゴリに分岐する。
+ordinal は「偶然を排除する」原則（`locator-principles.md`）の対象だが**全面禁止は誤り** — **曖昧さ解消のための ordinal** は用途で3カテゴリに分岐する。意図の直接表現（count 走査の `nth(i)` イテレータ・引数由来 index の `nth(param)`）は本分類の対象外 — 理由コメントのみ必須。
 
 | カテゴリ | 例 | 性質 | 扱い |
 |---------|----|------|------|
 | **A: 曖昧マッチの応急処置** | 複数マッチ → `.first()` | 偶然の固定化（並び替え・要素追加で破壊） | 最終手段。ピラミッド上位を先に試す + 理由コメント **+ TODO** |
 | **B: フレームワークの不変条件** | `getByRole('dialog').last()` = アクティブモーダル | z-order = DOM append 順という実在の不変条件を符号化 | 下記①②を両方満たす場合のみ許容。理由コメント必須・**TODO 不要** |
+| **C: ループ消化型イテレーション** | 「先頭1件を処理」を0件まで反復する `.first()` | どの順でも全件消化され順序に意味がない | 下記①②を両方満たす場合のみ許容。理由コメント必須・**TODO 不要** |
 
-**判断基準**: 「たまたま位置で選んでいる（A）」のか「不変条件で位置が意味を持つ（B）」のか。
+**判断基準**: 「たまたま位置で選んでいる（A）」のか「不変条件で位置が意味を持つ（B）」のか「順序が結果に影響しない消化ループ（C）」なのか。
 
 **B 判定条件（両方必須。片方でも欠ければ A 扱い）**:
 1. **フレームワーク仕様として検証可能** — UI ライブラリの公開挙動・DOM 構築規則で根拠を言語化できる（「たぶん末尾」という経験則は B でない）
 2. **代替実装が物理的に存在しない** — 優先順位ピラミッドの上位手段で一意特定できない（できるなら A = 消す対象）
 
-> **WHY（条件を明示する理由）**: 条件がないと過剰 B 判定で TODO なしコメントが量産される。**迷ったら A** に倒す。
+**C 判定条件（両方必須。片方でも欠ければ A 扱い）**: ①呼び出し元が0件になるまでのループで全件消化する（1回きりの先頭取りは A）②取り出す順序が結果に影響しない。消化の完全性は別ガード（maxLoops + throw、「ハングという形の偽陽性」参照）で担保 — ガードなしは C でも不合格。
+
+> **WHY（条件を明示する理由）**: 条件がないと過剰 B/C 判定で TODO なしコメントが量産される（判定の甘さが偽の正当化を生む）。**迷ったら A** に倒す。
+
+解決手順とコード例（❌ノーコメント / ✅A 理由+TODO / ✅B 不変条件のみ / ✅C 消化ループ）は **`e2e-locator` §11 が正本**。
 
 ### アクティブモーダルのイディオム — `activeDialog()` と `SELECTORS.MODAL` の使い分け
 
@@ -78,41 +83,9 @@ catch で `false` を返すコード全てが禁止ではない。**catch が何
 | `click()` / `fill()` 等の操作失敗 | 操作の成功 | 「何かが失敗した」（原因不明） | ❌ 禁止 |
 | `textContent()` / `inputValue()` 等の取得失敗 | 値の取得 | 「何かが失敗した」（原因不明） | ❌ 禁止 |
 
-**許容パターン**（`architecture.md`「Test層とAction層の検証の両立」参照）:
-```typescript
-// ✅ waitFor のタイムアウトのみを catch — 「見えなかった」という事実を返す
-async isSectionVisible(): Promise<boolean> {
-  try {
-    await this.section.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
-    return true;
-  } catch { return false; }
-}
-```
+**判断基準**: catch ブロックが捕まえるのは「要素の状態遷移のタイムアウト」だけか？ Yes なら許容、No なら禁止（waitFor と値取得は try-catch を分離する）。
 
-**禁止パターン**: waitFor 以外の操作を同じ try-catch に入れる
-```typescript
-// ❌ waitFor 成功後の textContent 失敗も false になり、真の原因が隠れる
-async hasValue(): Promise<boolean> {
-  try {
-    await this.section.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
-    const text = await this.section.textContent(); // ← これの失敗も catch される
-    return /\d+/.test(text ?? '');
-  } catch { return false; }
-}
-```
-
-```typescript
-// ✅ waitFor と値取得を分離する
-async hasValue(): Promise<boolean> {
-  try {
-    await this.section.waitFor({ state: 'visible', timeout: TIMEOUTS.DEFAULT });
-  } catch { return false; }
-  const text = await this.section.textContent();
-  return /\d+/.test(text ?? '');
-}
-```
-
-**判断基準**: catch ブロックが捕まえるのは「要素の状態遷移のタイムアウト」だけか？ Yes なら許容、No なら禁止。
+コード例（✅許容 / ❌混入 / ✅分離）は **`e2e-test-create` §3「try-catch の境界」が正本**。
 
 ## verify 内の固定待機 — 待機は操作メソッドに集約
 
@@ -127,48 +100,9 @@ async hasValue(): Promise<boolean> {
 | 待機所有者 | action の付随処理 | （本来は呼び出し側のフロー制御） |
 | 判定 | 既存慣習として許容 | ❌ **禁止** |
 
-### なぜ禁止か
+**WHY**: verify の責務は「観測して真偽を返す」こと。固定 sleep が混ざると①判定の正しさが待ち時間に賭かる（flaky な偽陰性/偽陽性）②操作メソッド末尾と verify 冒頭が同じ描画安定を二重に待つ（待機所有者の分散 = 層責務の崩れ）③1件でも残ると AI が正解パターンとして模倣・増殖する。
 
-1. **判定の正しさが待ち時間に賭かる** — verify の責務は「観測して真偽を返す」こと。固定 sleep が混ざると `SPA_RENDERING(2s)` で削除後遷移が終わらなければ、まだ消えていない値を読んで「消えた」と返却（flaky な偽陰性）。
-2. **二重待機の症状** — 操作メソッド (`deleteItem()`) 末尾と verify (`isItemAbsent()`) 冒頭が **同じ「削除後の描画安定」を別々に待つ** ことになる。待機対象が同じなのに所有者が分散しているのは層の責務が崩れているサイン。
-3. **層分離の意図** — 「待機戦略（いつ・何を・どれだけ待つか）はフロー制御の関心事」。verify が「外の action の余波」を待ち始めると、フロー制御の関心事が観測メソッドに漏れ込む。
-4. **AI 拡散リスク** — 1 件でも残っていると AI が「正解パターン」として模倣・増殖する（`locator-principles.md` の AI 行動規範と同構図）。
-
-### コード例
-
-```typescript
-// ❌ 禁止: verify 内の固定待機 — 判定の正しさが 2 秒に賭かる
-async isItemAbsent(name: string): Promise<boolean> {
-  await this.page.waitForTimeout(TIMEOUTS.SPA_RENDERING); // ← 外部 action の結果を待つ
-  const names = await this.collectItemNames();
-  return !names.includes(name);
-}
-
-// ✅ 正しい: 待機は操作メソッド側に集約、verify は観測のみ
-async deleteItem(): Promise<void> {
-  await this.itemDeleteButton.click();
-  await this.confirmDeleteButton.click();
-  await this.page.waitForTimeout(TIMEOUTS.SPA_RENDERING); // ← 自 action の余波待ち（慣習）
-}
-async isItemAbsent(name: string): Promise<boolean> {
-  const names = await this.collectItemNames();
-  return !names.includes(name);
-}
-```
-
-### 「遷移検証」パターンで偽陽性も同時に排除する
-
-verify が「ある状態であること」を返すなら、**呼び出し側で「変化前後」を両方検証する**:
-
-```typescript
-// 削除前: 対象が存在する（この前提検証がないと「削除で消えた」と言えず偽陽性）
-expect(await itemAction.isItemPresent(name)).toBeTruthy();
-await itemAction.deleteItem();
-// 削除後: 対象が消えた
-expect(await itemAction.isItemAbsent(name)).toBeTruthy();
-```
-
-「`isAbsent` 単独」では「最初から存在しなかった」のか「削除で消えた」のかを区別できない。`isPresent → action → isAbsent` の対で観測することで偽陽性（action が効かなくても緑）を排除する。
+コード例（❌verify 内固定待機 / ✅操作メソッドへ集約）と「遷移検証」パターン（`isPresent → action → isAbsent` の対で偽陽性を排除）は **`e2e-test-create/test-data-management.md`「verify は観測のみ」が正本**。
 
 ### 例外
 
@@ -190,35 +124,7 @@ expect(await itemAction.isItemAbsent(name)).toBeTruthy();
 - テスト条件（引数・パラメータで明示）→ **見つからなければ Fail**
 - 環境差異の吸収（モーダルの有無・遷移先の違い）→ **スキップ可**
 
-```typescript
-// ❌ 禁止: テスト条件を黙殺
-async checkRequired(): Promise<void> {
-  try {
-    await this.checkbox.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_CHECK });
-  } catch {
-    console.log('見つからないのでスキップ');  // ← テスト条件が満たされず Pass する偽陽性
-    return;
-  }
-  await this.checkbox.check();
-}
-
-// ✅ 正しい: テスト条件を満たせなければ Fail
-async checkRequired(required: boolean): Promise<void> {
-  try {
-    await this.checkbox.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_CHECK });
-  } catch {
-    if (required) {
-      throw new Error('必須チェックボックスが見つかりません（required=true）');
-    }
-    return; // required=false で存在しないのは許容
-  }
-  if (required) {
-    await this.checkbox.check();
-  } else {
-    await this.checkbox.uncheck();
-  }
-}
-```
+コード例（❌黙殺 / ✅required で throw）は **`e2e-test-create/test-data-management.md`「テスト条件を満たせない場合は Fail」が正本**。
 
 ## ハングという形の偽陽性
 
@@ -232,18 +138,7 @@ async checkRequired(required: boolean): Promise<void> {
 代表例: **UI ライブラリの Tabs で中身が空のとき `aria-disabled="true"` になる罠**（Ant Design Tabs / MUI Tabs / Radix UI Tabs 等）。
 詳細は `.claude/skills/e2e-locator/ant-design-tabs-disabled.md` を参照。
 
-```typescript
-// ❌ 空のとき test timeout までハング → 真因が即時に判らない
-await navigationAction.switchTab('アーカイブ');
-await action.permanentDeleteAll();
-
-// ✅ 事前ガード → ハングなしで即 Fail、原因も明確
-expect(await action.hasItemsInTab('アーカイブ')).toBeTruthy();
-await navigationAction.switchTab('アーカイブ');
-expect(await action.isItemVisible(targetName)).toBeTruthy();
-await action.permanentDeleteAll();
-expect(await action.isItemHidden(targetName)).toBeTruthy(); // 後始末の空振りも検知
-```
+事前ガードのコード例（存在検証 → 切替 → 操作 → 消失検証の遷移検証）は **`e2e-test-create/test-data-management.md`「Cleanup フェーズの正直な検証」が正本**。
 
 ## AI生成コードの警戒パターン
 
@@ -257,16 +152,7 @@ expect(await action.isItemHidden(targetName)).toBeTruthy(); // 後始末の空�
 
 ### 何が問題か
 
-```typescript
-// ❌ 禁止
-const random = Date.now().toString();
-const RESOURCE_NAME = `リソース名${random}`;
-
-test.describe('TC-XX', () => {
-  test('Phase 1: 作成', async () => { /* RESOURCE_NAME でリソース作成 */ });
-  test('Phase 2: 利用', async () => { /* RESOURCE_NAME で検索 — Phase 1 に暗黙依存 */ });
-});
-```
+アンチパターンの典型形（module スコープの乱数 + 複数 `test()` の暗黙参照）のコード例は **`e2e-test-create/test-data-management.md` が正本**。
 
 | 弊害 | 具体例 |
 |------|-------|

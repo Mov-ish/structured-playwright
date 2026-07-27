@@ -245,7 +245,7 @@ async clickUser(name: string) {
 
 ## §11. ordinal セレクタ（`.first()` / `.last()` / `.nth()`）の対応手順
 
-ordinal は用途で2カテゴリに分かれ、要求が異なる（詳細 `prohibited-patterns.md`「ordinal セレクタの許容境界」）。
+ordinal は用途で3カテゴリに分かれ、要求が異なる（詳細 `prohibited-patterns.md`「ordinal セレクタの許容境界」）。
 
 ### カテゴリA: 曖昧マッチの応急処置（`.first()` が典型）
 「複数マッチしたから位置で選ぶ」= 偶然の固定化。次の順で消す努力をし、消せなければ理由コメント **+ TODO**（順序は `locator-principles.md`「優先順位ピラミッド」に対応）。
@@ -280,4 +280,14 @@ page.locator('[role="dialog"] input[type="checkbox"]').first()
 // モーダルライブラリは閉じても role="dialog" が DOM に残る。最後に開いたものが
 // DOM 末尾に積まれるため last() でアクティブなモーダルを取る
 this.page.getByRole('dialog').last()
+```
+
+### カテゴリC: ループ消化型イテレーション（`.first()` が典型）
+「先頭1件を取り処理して、また先頭を取る」を0件になるまで繰り返す用途（一括クリーンアップ・janitor 処理）。どの順でも全件消化されるため A の偶然の固定化が起きない。**理由コメント必須・TODO 不要**（B と同等）。判定条件2つ（①0件までのループで全件消化 ②順序が結果に影響しない）と maxLoops + throw ガード必須の正本は `prohibited-patterns.md`。
+
+> **A/B/C 判定の対象外**（正本 `prohibited-patterns.md` 同節）: ordinal が曖昧さ解消でなく**意図の直接表現**である用途（count 走査の `nth(i)` ループイテレータ・引数由来 index の `nth(param)`）は本分類の対象外 — 理由コメントのみ付与する（例: `// ループイテレータ（A/B 外: 位置固定でなく全件走査）`）。
+
+```typescript
+// ✅ C: 呼び出し元が0件になるまで消化するループのため first() の順序は結果に影響しない（TODO 不要）
+return this.rowContaining(text).first();
 ```
