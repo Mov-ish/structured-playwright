@@ -1,0 +1,4 @@
+src/pages/SamplePage.ts:9: [isReady] await this.page.waitForTimeout(2000);
+src/pages/SamplePage.ts:15: [isVisible] await this.page.waitForTimeout(1000);
+src/pages/SamplePage.ts:22: [isStable] await this.page.waitForTimeout(500);
+src/actions/SampleAction.ts:10: [isDone] await this.page.waitForTimeout(300);

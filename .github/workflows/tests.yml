@@ -1,0 +1,17 @@
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check-verify-wait:
+    name: check-verify-wait.js（AST 検出のテスト）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: bash tests/check-verify-wait.test.sh
