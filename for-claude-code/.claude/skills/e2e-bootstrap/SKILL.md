@@ -444,6 +444,7 @@ Playwrightデフォルト（`tests/`直下にspecファイル）から変換す�
 - [ ] HTML意味層の状況（data-testid有無 / aria-label整備状況）
 - [ ] SPA or MPA
 - [ ] CI/CD環境（CircleCI / GitHub Actions等）
+- [ ] **Rules 総量 baseline の凍結（人間が実行）**: `npm run gate` が提示する実測値で `.claude/rules-baseline` を作成する。**AI エージェントはこのファイルを作成・変更しない**（実測値を人間に伝えて設定を依頼するまでが担当範囲。凍結・引き上げは「この量を正とする」人間の意思決定 — 正本: `scripts/gate.sh` チェック 21 の★コメント）
 
 ---
 

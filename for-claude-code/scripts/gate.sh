@@ -158,10 +158,14 @@ check "locator(SELECTORS.MODAL).last() ハイブリッド" "getByRole('dialog').
 #     4箇所が対象。正規タグは Arrange/Act/Assert/Cleanup の4つのみ（意味は e2e-test-create §11 が正本）。
 #     [Act/Assert] 等の複合タグは書式は正しく見えるが未定義。
 #     ブラックリストでなくホワイトリストにする理由: 複合タグは [Act/Assert] の他にも
-#     [Arrange/Act] [Assert/Cleanup] のような独立した変異が生まれやすく、固定パターンでは次の
-#     変異を防げない（narrow は偽の安心を生む — 本ファイル冒頭の設計原則と同じ理由）。
+#     [Arrange/Act] [Assert/Cleanup] のような独立した変異が生まれやすく、固定パターンの
+#     ブラックリストでは追いつかない（narrow は偽の安心を生む — 本ファイル冒頭の設計原則と同じ理由）。
 #     文字クラスに ASCII 英字 + / のみを許容しているため、[定期] のようなデータ命名プレフィックス等、
-#     非タグ用途の角括弧は自然に除外される（誤検知なし）
+#     非タグ用途の角括弧は自然に除外される。
+#     既知の限界: ①抽出も同じ文字クラスなので、[Act1]（数字混じり）や [Act 2]（空白混じり）の
+#     変異は抽出されず素通りする（ホワイトリストが防ぐのは「抽出された範囲」の変異のみ）
+#     ②JSDoc 内に Markdown チェックリスト（* - [x] 等）を書くと [x] が未定義タグとして
+#     誤検知される — 検証ポイントは ✅ マーク表記を使う（e2e-test-create §11）
 C14_RAW=$(grep -rnE \
   -e '■[[:space:]]*\[[A-Za-z/]+\]' \
   -e '^[[:space:]]*//[[:space:]]*\[[A-Za-z/]+\]' \
@@ -198,7 +202,9 @@ AWK_COMMENT_FUNCS='
 #     A（応急処置）= コメント + TODO 必須 / B（不変条件）= 理由コメント必須
 #     （prohibited-patterns.md「ordinal セレクタの許容境界」）
 #     直前行は見ない — 別の statement の説明コメントを理由コメントと誤認する false negative を
-#     防ぐ。理由コメントは当該行（行頭コメント行 or 行末インラインコメント）に書く運用に統一する
+#     防ぐ。理由コメントは当該行（行頭コメント行 or 行末インラインコメント）に書く運用に統一する。
+#     複数行呼び出しで理由コメントが引数行にあるケースも検出される（バグではなく仕様 —
+#     コメントは呼び出し行に書く）
 C15=$(find src -name '*.ts' -print0 2>/dev/null | xargs -0 awk "$AWK_COMMENT_FUNCS"'
   /\.(first|last|nth)\(/ {
     if (!is_comment_line($0) && !has_inline_comment($0))
@@ -210,6 +216,7 @@ fail_print "ordinal セレクタ コメントなし" "理由コメント（A は
 # 16. waitForTimeout で当該行に理由コメントなし（旧 W3 — ❌ に昇格）
 #     コメントは「直前のどの操作の何を待つか」を書く（定数名の言い換えは不可）。
 #     直前行は見ない（15 と同じ理由）。理由コメントは当該行に書く運用に統一する
+#     （複数行呼び出しの引数行コメントも検出対象 — 15 と同じく仕様）
 C16=$(find src -name '*.ts' -not -path '*/config/*' -print0 2>/dev/null | xargs -0 awk "$AWK_COMMENT_FUNCS"'
   /waitForTimeout/ {
     if (!is_comment_line($0) && !has_inline_comment($0))
@@ -246,6 +253,7 @@ fail_print "describe 内の test.describe.configure" "トップレベル（descr
 #     src/actions（verify は Action 層にも存在する — pages 限定は盲点）。
 #     既知の検出漏れ（目視・レビューで補完。詳細は check-verify-wait.js 冒頭）:
 #       ① 返り値注釈のないメソッド（型推論依存）は対象外 ② verify → void ヘルパー間接呼び出し内の待機
+#       ③ module スコープ変数形（const isX = async (): Promise<boolean> =>）は対象外
 #     exit 2 = 走査自体の失敗。「違反ゼロ」と「検査できていない」を同じ ✅ にしない
 C19=$(node "$SCRIPT_DIR/check-verify-wait.js" 2>&1); C19_STATUS=$?
 if [ "$C19_STATUS" -ne 0 ]; then
@@ -260,7 +268,10 @@ fi
 #     使用側の理由コメント（チェック 16）と対になる宣言元の要求。16 は config/ を除外して使用側のみ
 #     走査するため、宣言側はここで検査する。コメントは当該行（行頭コメント行 or 行末インライン）に
 #     書く — 直前行・ブロックコメントを見ない理由は 15/16 と同じ（ブロックコメントが
-#     どの定数行を説明しているか機械判定できない）
+#     どの定数行を説明しているか機械判定できない）。
+#     既知の検出漏れ: 対象は「KEY: 数値」のオブジェクトリテラル形式（大文字キー）のみ。
+#     `export const FOO = 5000` の直接代入形式・小文字キーは素通りする（constants は
+#     オブジェクトリテラル + 大文字キーが実装慣習 — e2e-bootstrap §4 の雛形が正本）
 C20=$(find src/config -name '*.ts' -print0 2>/dev/null | xargs -0 awk "$AWK_COMMENT_FUNCS"'
   /^[[:space:]]*[A-Z][A-Z0-9_]*:[[:space:]]*[0-9]/ {
     if (!is_comment_line($0) && !has_inline_comment($0))
@@ -279,21 +290,41 @@ if [ -d .claude/rules ]; then
   #     削除には誰も動機を持たないため一方向ラチェットになる。総量に上限を設けて
   #     「追加するなら何を削るか」の議論を強制する。
   #
-  #     ★ 初回セットアップ: RULES_BASELINE は未設定で出荷している。導入したプロジェクトの
-  #       rules 構成で実測した値を下の RULES_BASELINE に設定して凍結すること（未設定のまま
-  #       では gate は通らない）。値の提示までを機械がやり、書き込みは人間が行う —
-  #       凍結は「この量を正とする」という意思決定であり、無意識に行われるべきでない。
-  #     ★ BASELINE の引き上げは禁止しない。ただし gate.sh の diff に必ず現れるため、
+  #     baseline は .claude/rules-baseline（数値 1 行の外部ファイル）に置く。gate.sh 直書きに
+  #     しない理由: 本ファイルは配布テンプレートであり、導入先が gate.sh を編集すると
+  #     テンプレート更新時のコンフリクト源になる。外部ファイルでも「引き上げが必ず diff に
+  #     現れる」性質は変わらない。置き場所を .claude/rules/ の外にする理由: rules/ 内に置くと
+  #     総量計測が baseline ファイル自身を数える再帰になる。
+  #
+  #     ★ 初回セットアップ: baseline ファイルは未作成で出荷している。導入したプロジェクトの
+  #       rules 構成で実測した値で人間が作成して凍結すること（未作成のままでは手動 gate は
+  #       通らない）。値の提示までを機械がやり、ファイル作成は人間が行う — 凍結は「この量を
+  #       正とする」という意思決定であり、無意識に行われるべきでない。
+  #       **AI エージェントは baseline ファイルを自分で作成・変更しない**（実測値を人間に
+  #       伝えて設定を依頼するまでが担当範囲）。
+  #     ★ 未作成時の判定は実行文脈で変える: 手動実行では ❌（セットアップを強制）、
+  #       Stop フック経由（GATE_CALLER=stop-hook）では ⚠️ に落とす。フックの ❌ は
+  #       エージェントの Stop をブロックし続けるため、「自分で baseline を書いて脱出する」
+  #       という凍結思想と正面衝突するインセンティブを生む — 人間の意思決定待ちの状態で
+  #       エージェントを追い込まない。
+  #     ★ BASELINE の引き上げは禁止しない。ただし baseline ファイルの diff に必ず現れるため、
   #       レビューで「なぜ削らずに枠を広げるのか」が必ず議題になる。これが本チェックの本体であり、
   #       別途の例外申請フローは設けない（機構を増やすと形骸化するため）。
-  RULES_BASELINE="" # 導入時に実測値で凍結する（上記★の手順）。引き上げも同手順
+  BASELINE_FILE=".claude/rules-baseline"
+  RULES_BASELINE=$(grep -oE '[0-9]+' "$BASELINE_FILE" 2>/dev/null | head -1 || true)
   RULES_TOTAL=$(find .claude/rules -name '*.md' -exec cat {} + 2>/dev/null | wc -c | tr -d ' ')
   if [ -z "$RULES_BASELINE" ]; then
-    echo "❌ Rules 常時ロード総量 → 初回セットアップ: 現在の実測値 ${RULES_TOTAL}B を gate.sh の RULES_BASELINE に設定して凍結してください（gate.sh 内★コメント参照）"
-    FAIL=1
+    BASELINE_MSG="初回セットアップ: 現在の実測値で ${BASELINE_FILE} を作成して凍結してください（人間が実行: echo ${RULES_TOTAL} > ${BASELINE_FILE}。AI エージェントは作成しない — gate.sh 内★コメント参照）"
+    if [ "${GATE_CALLER:-}" = "stop-hook" ]; then
+      echo "⚠️  Rules 常時ロード総量: baseline 未設定（${BASELINE_MSG}）"
+      WARN=1
+    else
+      echo "❌ Rules 常時ロード総量 → ${BASELINE_MSG}"
+      FAIL=1
+    fi
   elif [ "$RULES_TOTAL" -gt "$RULES_BASELINE" ]; then
     fail_print "Rules 常時ロード総量" \
-      "同量を削るか、BASELINE 引き上げの必然性を PR 本文に書く（gate.sh の RULES_BASELINE）" \
+      "同量を削るか、baseline 引き上げの必然性を PR 本文に書く（${BASELINE_FILE} — 引き上げの実行は人間）" \
       "現在 ${RULES_TOTAL}B ($((RULES_TOTAL / 1000))KB) / 上限 ${RULES_BASELINE}B ($((RULES_BASELINE / 1000))KB) — 超過 $((RULES_TOTAL - RULES_BASELINE))B"
   else
     echo "✅ Rules 常時ロード総量: ${RULES_TOTAL}B / ${RULES_BASELINE}B（残 $((RULES_BASELINE - RULES_TOTAL))B）"
@@ -372,7 +403,7 @@ if [ -d .claude/rules ]; then
 
   # W7. Rules の TypeScript/JavaScript コードブロック（「rules はコードを持たない」原則）
   #     ASCII 図（```のみ）は対象外。コード例（```typescript 等）は Skills に移し正本ポインタに留める
-  W7=$(grep -rn '^\s*```\(typescript\|javascript\|ts\|js\)' .claude/rules/ 2>/dev/null | grep -vE "$COMMENT_LINE_FILTER" || true)
+  W7=$(grep -rnE '^[[:space:]]*```(typescript|javascript|ts|js)' .claude/rules/ 2>/dev/null || true)
   warn_print "Rules の TS/JS コードブロック" "rules はコードを持たない — コード例は Skills に移し正本ポインタに留める" "$W7"
 
 else

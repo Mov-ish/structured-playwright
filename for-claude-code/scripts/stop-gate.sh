@@ -56,7 +56,10 @@ printf '%s\n' "$CHANGED" | grep -qE "^(src/|\.claude/|scripts/)" || exit 0
 # 依存未インストールだと tsc が偽 fail する → スキップ（偽 block 防止）
 [ -d "node_modules" ] || exit 0
 
-RESULT=$(bash scripts/gate.sh 2>&1)
+# GATE_CALLER=stop-hook: gate 側が実行文脈を判別するための印。baseline 未設定の判定を
+# 手動実行の ❌ から ⚠️ に落とす（未設定はエージェントには解決できない人間の意思決定待ち —
+# ❌ で Stop をブロックし続けると「自分で baseline を書いて脱出する」誘因を生むため）
+RESULT=$(GATE_CALLER=stop-hook bash scripts/gate.sh 2>&1)
 STATUS=$?
 
 if [ "$STATUS" -ne 0 ]; then
