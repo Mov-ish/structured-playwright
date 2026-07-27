@@ -2,8 +2,6 @@
 
 > **正本 = 本ファイル**（e2e-test-create §11 から抽出）。テスト手順書を書く・レビューで JSDoc と実装の同期を確認するときに読む。規範（必須項目・Phase=test.step 原則・同期 MUST）の正本は `architecture.md`「Test層のヘッダーコメント」。
 
-規範（必須項目・Phase=test.step 原則・同期 MUST）の正本は `architecture.md`「Test層のヘッダーコメント」。本節は**書く局面で使うテンプレートとタグ早見**。
-
 ```typescript
 /**
  * TC-XX: テストケース名

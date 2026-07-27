@@ -112,9 +112,9 @@ Phase 単位のグルーピング（複数の Action 呼び出しをまとめて
 - Phase ごとの手順（番号付き）
 - 各 Phase に `[Arrange]` `[Act]` `[Assert]` `[Cleanup]` タグ
 - 検証ポイント（expect で何を確認するか）
-- 元手順書との意図的差分（なければ「なし」— 欄の書式と対象例は `e2e-test-create` §11）
+- 元手順書との意図的差分（なければ「なし」— 欄の書式と対象例は `e2e-test-create/jsdoc-template.md`）
 
-**テンプレート全文とタグ（[Arrange]/[Act]/[Assert]/[Cleanup]）の意味表は `e2e-test-create` §11 が正本**（書く局面でロードされる）。
+**テンプレート全文とタグ（[Arrange]/[Act]/[Assert]/[Cleanup]）の意味表は `e2e-test-create/jsdoc-template.md` が正本**（書く局面でロードされる）。
 
 **ルール**:
 - テスト作成時に必ず記載する
