@@ -37,7 +37,10 @@ npm run gate; echo "exit: $?"
 検出ロジックの**正本は `scripts/gate.sh`**（CI でも PR ごとに同一判定が走る）。
 カバー範囲: tsc 型チェック / Action・Test 層 Locator 直書き / `.catch` 隠蔽 / `text=` / XPath /
 `private readonly` / Fixture 未経由 import / Test 内 `new Action` / Action 層 `expect` /
-タイムアウト・URL ハードコード / `Date.now()` 一意名 / MODAL ハイブリッド + ⚠️ 警告（ordinal・waitForTimeout コメント等）。
+タイムアウト・URL ハードコード / `Date.now()` 一意名 / MODAL ハイブリッド / 未定義タグ /
+ordinal・waitForTimeout・expect 部分一致の理由コメントなし / describe 内 configure /
+verify 内 waitForTimeout（AST）/ 数値定数の宣言元コメントなし / メタ層（Rules 総量ラチェット・
+Skill 間参照・SKILL.md サイズ）+ ⚠️ 警告（Page Object waitForTimeout の目視補完等）。
 
 `npm run gate` がない場合は以下を個別に実行する:
 
@@ -80,7 +83,7 @@ grep -rn "\.catch(() => false)\|\.catch(() => true)" src/
 
 ### 4層責務
 - [ ] Page Object: `readonly`（`private readonly`禁止）、expect 未使用
-- [ ] **Page Object verify メソッド（boolean を返す状態確認）内に `waitForTimeout` を置いていないか** — 待機は操作メソッド（void）側に集約。verify 内固定待機は判定の正しさが待ち時間に賭かる + 二重待機の温床（`prohibited-patterns.md`「verify 内の固定待機 — 待機は操作メソッドに集約」参照）
+- [ ] **Page Object / Action の verify メソッド（boolean を返す状態確認）内に `waitForTimeout` を置いていないか** — 待機は操作メソッド（void）側に集約。verify 内固定待機は判定の正しさが待ち時間に賭かる + 二重待機の温床（`prohibited-patterns.md`「verify 内の固定待機 — 待機は操作メソッドに集約」参照）。**§2.0 の gate が AST で機械検出済み** — 目視は既知の検出漏れ（返り値注釈のない推論依存メソッド・void ヘルパー間接呼び出し内の待機）の補完に絞る
 - [ ] Action: 各ステップ`this.step()`でログ記録（`console.log`単体は禁止）、expect未使用、**Locator 直書きなし（§2.0 で grep 検出）**、LoginAction はログイン成功検証あり
 - [ ] Fixture: `stepCounter` が worker スコープで定義されている（`scope: 'worker'`）
 - [ ] Test: Fixture経由import、Fixture引数でAction取得、Locator直書きなし
@@ -109,11 +112,11 @@ grep -rn "\.catch(() => false)\|\.catch(() => true)" src/
 ## §3. SHOULD FIX
 
 - [ ] ordinal（`.first()` / `.last()` / `.nth()`）の A/B 判定を行う
-  - コメントなし → §2.0 の gate ⚠️ で検出済み。コメントを付与する
+  - コメントなし → §2.0 の gate ❌ で機械検出済み（レビューに到達する時点で 0 件のはず）。目視の対象は**コメント内容の妥当性**
   - コメントあり・TODO なし → **B 判定条件を両方満たしているか確認する**: ①フレームワーク仕様として検証可能 ②代替手段が物理的に存在しない。片方でも欠ければ A 扱いにして TODO を追加する
   - コメントあり・TODO あり → A（偶然の固定化）として記録済み。理由コメントが実態を正しく説明しているか確認する
   - **迷ったら A**（TODO 追加）
-- [ ] `waitForTimeout` に理由コメント + TIMEOUTS定数
+- [ ] `waitForTimeout` の理由コメントが「直前のどの操作の何を待つか」を説明しているか — コメントの**有無**は §2.0 の gate ❌ で機械検出済み。目視の対象は**内容**（定数名の言い換え = `// SPA描画完了待ち` の類は不可）
 - [ ] `:has-text()` → `:text-is()`（完全一致）を検討したか
 - [ ] Local Universe（親要素絞り込み）活用
 - [ ] AAAパターン、結果検証、データクリーンアップ
@@ -121,7 +124,7 @@ grep -rn "\.catch(() => false)\|\.catch(() => true)" src/
 - [ ] `.spec.ts` にテスト手順ヘッダーコメントがあるか（Phase・手順番号・検証ポイント）
 - [ ] 各 Phase に `[Arrange]` / `[Act]` / `[Cleanup]` タグが付いているか（データ準備とテスト本体の区別）
 - [ ] `this.step()` を使う public メソッドに `this.beginAction()` があるか（ステップ番号付与）
-- [ ] 通し `test()`（作成→操作→検証を1本）が、その**条件下の振る舞い自体を subject とする**ものに限られているか — subject が別でリソース作成が単なる前提なら、作成を Setup Action に出してテストを絞る（`e2e-test-create` §9）
+- [ ] 通し `test()`（作成→操作→検証を1本）が、その**条件下の振る舞い自体を subject とする**ものに限られているか — subject が別でリソース作成が単なる前提なら、作成を Setup Action に出してテストを絞る（`e2e-test-create/test-data-management.md`）
 - [ ] JSDoc の実行時間などメタデータに「未測定」「実機確認時に更新」等の未更新プレースホルダが残っていないか（テスト通過済みなら実測値または確認済みコメントに置き換える）
 - [ ] fixture カタログのメソッド description が実装と一致しているか（Action 名変更・引数変更に追随しているか）
 - [ ] 実機確認で解決できる TODO がそのまま残っていないか（「解決策が分かっている TODO」は同 PR 内で対処する）

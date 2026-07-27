@@ -13,7 +13,7 @@ gate 列: ✓ = `npm run gate` が機械検出（exit 1）/ ⚠️ = gate が警
 | `text=ログイン` 記法 | プロジェクトで動作しない | `:has-text("ログイン")` or `getByRole` | ✓ |
 | XPath (`//div/span`) | 構造依存・AI誤生成の温床 | CSS + セマンティック | ✓ |
 | CSS構造セレクタ (`div > div > button`) | DOM揺れで即破壊 | 意味ベース + Local Universe | — |
-| ordinal セレクタ（`.first()` / `.last()` / `.nth()`）コメントなし | 偶然の固定化・保守不能（並び替え/要素追加で破壊） | 下記「ordinal セレクタの許容境界」参照（用途で A=コメント+TODO / B=理由コメントのみ に分岐） | ⚠️ |
+| ordinal セレクタ（`.first()` / `.last()` / `.nth()`）コメントなし | 偶然の固定化・保守不能（並び替え/要素追加で破壊） | 下記「ordinal セレクタの許容境界」参照（用途で A=コメント+TODO / B=理由コメントのみ に分岐） | ✓ |
 | `.catch(() => false)` / `.catch(() => true)` | タイムアウト隠蔽・false positive | 下記「try-catch の許容/禁止の境界」参照 | ✓ |
 | `private readonly` でLocator定義（Page Object層） | デバッグ困難 | `readonly`（public） | ✓ |
 | `import { test } from '@playwright/test'` | Fixture未経由 | `from '../fixtures/app.fixture'` | ✓ |
@@ -21,7 +21,7 @@ gate 列: ✓ = `npm run gate` が機械検出（exit 1）/ ⚠️ = gate が警
 | Action層で `expect()` | アサーションはTest層の責務 | `waitFor()` ベースの verify メソッド | ✓ |
 | Action層 / Test層で Locator 直接記述 | Locator は Page Object 層の責務 | PO に移しメソッド経由 / Action の verify メソッド経由 | ✓ |
 | Page Objectで `waitForTimeout()` | 固定待機はAction層で行う | `waitFor()` + try-catch | ⚠️ |
-| verify メソッド (boolean) 内の `waitForTimeout()` | 判定の正しさが待ち時間に賭かる + 二重待機（下記参照） | 待機は操作メソッド側に集約、verify は観測のみ | — |
+| verify メソッド (boolean) 内の `waitForTimeout()` | 判定の正しさが待ち時間に賭かる + 二重待機（下記参照） | 待機は操作メソッド側に集約、verify は観測のみ（gate が AST で機械検出） | ✓ |
 | 意味層の薄い要素にセマンティックLocator | 属性不足で動作しない | `:near()` / `svg[data-icon]` | — |
 | `has-text` をスコープなしで使用 | 同じ文言が複数→誤爆 | `text-is` or Local Universe で絞る | — |
 | モーダルを `page` 全体で探索 | 背景ボタン誤クリック | `[role="dialog"]` で閉じ込め | — |
@@ -64,8 +64,9 @@ ordinal は「偶然を排除する」原則（`locator-principles.md`）の対�
 | URLパターンハードコード (`'**/login**'`) | 環境変更時の修正漏れ | `URL_PATTERNS.LOGIN` 等の定数 | ✓ |
 | 共通セレクタハードコード (`'[role="dialog"]'`) | 一貫性欠如 | `SELECTORS.MODAL` 等の定数 | — |
 | 認証情報ハードコード | セキュリティリスク | `.env` + `EnvConfig` | — |
-| `waitForTimeout` に理由コメントなし | 意図不明で保守不能 | コメントは**宣言元（constants.ts）に置く** | ⚠️ |
+| `waitForTimeout` の当該行に理由コメントなし | 意図不明で保守不能 | 当該行に「直前のどの操作の何を待つか」を書く（定数名の言い換えは不可）。定数自体の意味は宣言元（constants.ts）に置く（gate が機械検出） | ✓ |
 | `Date.now()` 単独で一意テストデータ名を生成 | 並列ワーカー（別プロセス）が同一 ms で衝突 | `uniqueId()`（下記「一意テストデータ名は uniqueId() で生成する」参照） | ✓ |
+| expect の部分一致（`toContain`/`toContainText`/`toMatch`）に理由コメントなし | `'1'`⊂`'10'` 型の偽陽性 = All green のまま検証だけが死ぬ縮退 | 厳密一致（`toBe`/`toEqual`）を既定に。部分一致は「なぜ厳密一致にできないか」の理由コメント必須 | ✓ |
 
 ## try-catch の許容/禁止の境界
 

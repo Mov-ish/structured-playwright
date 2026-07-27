@@ -38,44 +38,21 @@ src/
 
 ## §3. 最小Fixture
 
-```typescript
-import { test as base } from '@playwright/test';
-import { StepCounter } from '../actions/StepCounter';
-import { LoginAction } from '../actions/LoginAction';
-
-// === Action 一覧 ===
-// 実装済み:
-//   loginAction  : ログイン
-//
-// TODO（未実装）:
-//   xxxAction    : 説明（対象TCや用途）
-type AppFixtures = { loginAction: LoginAction; };
-
-// Worker スコープ Fixture — stepCounter は describe 境界で自動リセットするため、
-// worker 全体で 1 インスタンス共有する（test スコープだと test() 跨ぎで番号が継続しない）
-type WorkerFixtures = { stepCounter: StepCounter; };
-
-export const test = base.extend<AppFixtures, WorkerFixtures>({
-  stepCounter: [
-    async ({}, use) => { await use(new StepCounter()); },
-    { scope: 'worker' },
-  ],
-  loginAction: async ({ page, stepCounter }, use) => { await use(new LoginAction(page, stepCounter)); },
-});
-export { expect } from '@playwright/test';
-```
-
-**TODO 管理ルール**: 新規 Action を実装したら TODO → 実装済みに昇格。未実装の計画は TODO に追記。詳細は `rules/architecture.md` 参照。
-
----
+**正本 = `fixture-template.md`（同ディレクトリ）— Fixture の新規作成・4層変換・新規 Action の登録時に必ず読む。** 収録: `base.extend` の全体構造（worker スコープ stepCounter 含む完全形）。
 
 ## §4. 最小constants.ts
 
 ```typescript
 export const TIMEOUTS = {
-  SHORT: 3000, MEDIUM: 10000, LONG: 30000, DEFAULT: 10000,
-  AUTH_STABILIZATION: 2000, MODAL_ANIMATION: 1000,
-  SPA_RENDERING: 2000, REDIRECT: 3000,
+  // 数値定数は宣言行コメント必須（gate が機械検出。1 キー 1 行 + 行末コメントで書く）
+  SHORT: 3000,   // 短い出現確認・安定化の上限（optional 要素のプローブ等、不在を早く諦める）
+  MEDIUM: 10000, // 中程度の要素出現待ちの上限
+  LONG: 30000,   // 長い遷移の上限（cross-origin リダイレクト完了・初回ページロード等）
+  DEFAULT: 10000, // 要素出現・URL 遷移待ちの標準上限
+  AUTH_STABILIZATION: 2000, // 外部認証リダイレクト後のセッション確立待ち
+  MODAL_ANIMATION: 1000, // モーダルの open/close アニメーション
+  SPA_RENDERING: 2000, // SPA の再描画・状態反映待ち
+  REDIRECT: 3000, // ページ遷移後の URL 確定・初期化待ち
 } as const;
 
 export const SELECTORS = {
@@ -95,7 +72,7 @@ export const URL_PATTERNS = {
 
 ```typescript
 // TIMEOUTS 拡張例
-ELEMENT_VISIBLE: 5000,
+ELEMENT_VISIBLE: 5000, // 特定要素の出現待ち（用途を書く — 宣言行コメントは gate が機械検出）
 
 // SELECTORS 拡張例（複数画面で共通のセレクタのみ）
 AGREEMENT_CHECKBOX: 'input[type="checkbox"]:near(:text("同意する"))',
@@ -375,6 +352,8 @@ TEST_USER_PASSWORD=
 }
 ```
 
+typescript は **5 系を維持**する（gate の verify 内固定待機チェックが TypeScript 5 系の JS コンパイラ API を使用。7 系は API 非公開のためチェックがエラー停止する）。
+
 > `typescript` と `@types/node` がないと `npx tsc --noEmit` による型チェックが実行できない。
 > §1 Definition of Done の型チェック要件を満たすために必須。
 >
@@ -465,6 +444,7 @@ Playwrightデフォルト（`tests/`直下にspecファイル）から変換す�
 - [ ] HTML意味層の状況（data-testid有無 / aria-label整備状況）
 - [ ] SPA or MPA
 - [ ] CI/CD環境（CircleCI / GitHub Actions等）
+- [ ] **Rules 総量 baseline の凍結（人間が実行）**: `npm run gate` が提示する実測値で `.claude/rules-baseline` を作成する。**AI エージェントはこのファイルを作成・変更しない**（実測値を人間に伝えて設定を依頼するまでが担当範囲。凍結・引き上げは「この量を正とする」人間の意思決定 — 正本: `scripts/gate.sh` チェック 21 の★コメント）
 
 ---
 
