@@ -25,6 +25,11 @@ This architecture separates concerns across 4 distinct layers:
 4. **Layer 4: Config/Env** - Environment configuration and settings
 
 
+### Getting Started (Claude Code)
+
+The [`for-claude-code/`](./for-claude-code/) directory is a drop-in kit for Claude Code: copy `.claude/`, `scripts/`, and `CLAUDE.md` into your project, and generate maintainable 4-layer Playwright tests from test procedures, checklists, or user stories — guarded by a mechanical gate (`npm run gate`). See [for-claude-code/README.md](./for-claude-code/README.md) (setup guide currently in Japanese: [docs/jp/claude-code-guide.md](./docs/jp/claude-code-guide.md)).
+
+
 ### Author
 
 **Ray-ish** ([@Mov-ish](https://github.com/Mov-ish))
@@ -60,6 +65,11 @@ If this template helps your project, a mention in your README or blog — or a s
 2. **Layer 2: Actions** - ビジネスロジック・複数画面フロー  
 3. **Layer 3: Tests** - テストシナリオ・検証（AAAパターン）
 4. **Layer 4: Config/Env** - 環境設定・環境変数
+
+
+### はじめかた（Claude Code）
+
+[`for-claude-code/`](./for-claude-code/) は Claude Code 用のドロップイン キットです。`.claude/` `scripts/` `CLAUDE.md` をプロジェクトへコピーするだけで、テスト手順書・チェックリスト・ユーザーストーリーから保守継続性の高い 4 層 Playwright テストを生成・維持できます（機械ゲート `npm run gate` 付き）。入口は [for-claude-code/README.md](./for-claude-code/README.md)、詳細は [docs/jp/claude-code-guide.md](./docs/jp/claude-code-guide.md)。
 
 
 ### 著者について

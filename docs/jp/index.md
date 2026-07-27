@@ -7,6 +7,9 @@
 
 ## 最初に読む（フェーズ別の入口）
 
+### Claude Code で運用する（推奨の入口）
+- `./claude-code-guide.md` — `for-claude-code/` 運用セットの導入・運用・ウォークスルー
+
 ### 環境構築（Bootstrap）
 - `./bootstrap.md`
 
