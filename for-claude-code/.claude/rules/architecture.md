@@ -70,7 +70,7 @@ readonly emailInput: Locator;
 ## Page Objectで許可される待機
 
 `waitFor()` + try-catch で boolean を返す状態確認メソッドは許可。
-`expect()` によるアサーション、`waitForTimeout()` による固定待機は禁止。
+`expect()` によるアサーションは禁止。`waitForTimeout()` は verify メソッド (boolean) 内は禁止（gate が AST で機械検出）、操作メソッド (void) 末尾は既存慣習として許容（正本: `prohibited-patterns.md`）。
 
 **verify メソッド（boolean を返す状態確認）には固定待機を置かない。**
 固定待機は操作メソッド（void）側に集約し、verify は **観測のみ** にする。

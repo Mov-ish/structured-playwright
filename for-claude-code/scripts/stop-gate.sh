@@ -44,8 +44,14 @@ CHANGED=$( {
 } )
 [ -z "$CHANGED" ] && exit 0
 
-# src/ 配下に変更がない場合はスキップ（docs / .claude の編集では gate を回さない）
-printf '%s\n' "$CHANGED" | grep -q "^src/" || exit 0
+# src/ に加え .claude/ と scripts/ の変更でも gate を回す（docs のみの編集ではスキップ）。
+# WHY: gate のメタ層チェック（Rules 総量ラチェット・Skill 間参照・SKILL.md サイズ）は
+#   src/ ではなく .claude/ を読む。「src/ に変更があるときだけ」を条件にすると、rules を
+#   増やす変更 = まさにラチェットが効くべきケースで本フックが素通りする。
+# scripts/ を含める理由: gate.sh が呼ぶ付属スクリプト（check-verify-wait.js = AST 判定本体）
+#   だけを変更したターンで素通りさせない（gate.sh 単体に絞ると穴が残る — broad に倒す）。
+#   副作用（stop-gate.sh 自身の編集でも gate が回る）は、フックを触った直後の動作確認として妥当。
+printf '%s\n' "$CHANGED" | grep -qE "^(src/|\.claude/|scripts/)" || exit 0
 
 # 依存未インストールだと tsc が偽 fail する → スキップ（偽 block 防止）
 [ -d "node_modules" ] || exit 0
