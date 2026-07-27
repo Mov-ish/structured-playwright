@@ -8,7 +8,7 @@
 `.claude/rules/` のルールは常に有効。Skillsは `.claude/skills/` にある。
 
 ### テスト作成
-テスト追加 / Actions・PageObject実装 / ユーザーストーリーからのテスト生成
+テスト追加 / Actions・PageObject実装 / テスト手順書・チェックリスト・ユーザーストーリーからのテスト生成
 → `/e2e-test-create` + 必要に応じて `/e2e-locator`
 
 ### レビュー
