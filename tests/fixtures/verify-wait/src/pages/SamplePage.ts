@@ -30,8 +30,10 @@ export class SamplePage {
     await this.page.waitForTimeout(1000);
   }
 
-  // ✓ 非検出: verify だが waitForTimeout を含まない
+  // ✓ 非検出: verify 本体内のコメントアウトされた待機は AST に存在しない
+  //   （grep/awk 近似なら誤検出する形 — AST 化の価値を固定化する対照）
   async isClosed(): Promise<boolean> {
+    // await this.page.waitForTimeout(9999);
     return this.page.isHidden();
   }
 

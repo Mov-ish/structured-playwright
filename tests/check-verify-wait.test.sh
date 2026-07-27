@@ -30,15 +30,17 @@ printf '{"name":"verify-wait-test","private":true}\n' > "$WORK/package.json"
 cd "$WORK"
 
 # --- ケース 1: TypeScript 5 系での検出精度 -------------------------------------
-npm install --no-save 'typescript@5' > /dev/null 2>&1
+# set -e 下で沈黙死させない（trap で WORK が消えるためログから原因が読めなくなる）
+npm install --no-save 'typescript@5' > /dev/null 2>&1 \
+  || { echo "❌ typescript@5 の npm install に失敗（ネットワーク・レジストリ到達性を確認）"; exit 1; }
 
 set +e
-ACTUAL=$(node scripts/check-verify-wait.js 2>/tmp/cvw-stderr.log)
+ACTUAL=$(node scripts/check-verify-wait.js 2>"$WORK"/cvw-stderr.log)
 STATUS=$?
 set -e
 
 if [ "$STATUS" -ne 0 ]; then
-  fail "ケース1: exit 0 を期待したが exit ${STATUS}（stderr: $(head -1 /tmp/cvw-stderr.log)）"
+  fail "ケース1: exit 0 を期待したが exit ${STATUS}（stderr: $(head -1 "$WORK"/cvw-stderr.log)）"
 else
   if diff <(printf '%s\n' "$ACTUAL" | sort) <(sort "$ROOT/tests/fixtures/verify-wait/expected.txt"); then
     pass "ケース1: 検出結果が expected.txt と完全一致（違反 4 件・非検出 6 形）"
@@ -54,21 +56,21 @@ printf '{"name":"typescript","version":"7.0.0-stub","main":"index.js"}\n' > node
 printf 'module.exports = { version: "7.0.0-stub" };\n' > node_modules/typescript/index.js
 
 set +e
-node scripts/check-verify-wait.js > /dev/null 2>/tmp/cvw-stderr.log
+node scripts/check-verify-wait.js > /dev/null 2>"$WORK"/cvw-stderr.log
 STATUS=$?
 set -e
 
-if [ "$STATUS" -eq 2 ] && grep -q 'createSourceFile' /tmp/cvw-stderr.log; then
+if [ "$STATUS" -eq 2 ] && grep -q 'createSourceFile' "$WORK"/cvw-stderr.log; then
   pass "ケース2: API 不在で exit 2 + createSourceFile への言及あり"
 else
-  fail "ケース2: exit 2 + 明示メッセージを期待したが exit ${STATUS}（stderr: $(head -1 /tmp/cvw-stderr.log)）"
+  fail "ケース2: exit 2 + 明示メッセージを期待したが exit ${STATUS}（stderr: $(head -1 "$WORK"/cvw-stderr.log)）"
 fi
 
 # --- ケース 3: typescript 未解決 ------------------------------------------------
 rm -rf node_modules
 
 set +e
-node scripts/check-verify-wait.js > /dev/null 2>/tmp/cvw-stderr.log
+node scripts/check-verify-wait.js > /dev/null 2>"$WORK"/cvw-stderr.log
 STATUS=$?
 set -e
 
