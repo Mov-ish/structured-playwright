@@ -29,6 +29,8 @@ This architecture separates concerns across 4 distinct layers:
 
 The [`for-claude-code/`](./for-claude-code/) directory is a drop-in kit for Claude Code: copy `.claude/`, `scripts/`, and `CLAUDE.md` into your project, and generate maintainable 4-layer Playwright tests from test procedures, checklists, or user stories — guarded by a mechanical gate (`npm run gate`). See [for-claude-code/README.md](./for-claude-code/README.md) (setup guide currently in Japanese: [docs/jp/claude-code-guide.md](./docs/jp/claude-code-guide.md)).
 
+**Not using Claude Code?** The `rules/` and `skills/` under [`for-claude-code/.claude/`](./for-claude-code/.claude/) are written to be read by humans as well — prohibited-pattern tables with alternatives, decision criteria, and code examples you can adopt directly as team conventions (currently in Japanese). The documents under [`docs/`](./docs/jp/index.md) carry the design philosophy; the operational canon lives next to the implementation so it never drifts.
+
 
 ### Author
 
@@ -70,6 +72,8 @@ If this template helps your project, a mention in your README or blog — or a s
 ### はじめかた（Claude Code）
 
 [`for-claude-code/`](./for-claude-code/) は Claude Code 用のドロップイン キットです。`.claude/` `scripts/` `CLAUDE.md` をプロジェクトへコピーするだけで、テスト手順書・チェックリスト・ユーザーストーリーから保守継続性の高い 4 層 Playwright テストを生成・維持できます（機械ゲート `npm run gate` 付き）。入口は [for-claude-code/README.md](./for-claude-code/README.md)、詳細は [docs/jp/claude-code-guide.md](./docs/jp/claude-code-guide.md)。
+
+**Claude Code を使わない場合でも**、[`for-claude-code/.claude/`](./for-claude-code/.claude/) の rules / skills は人間がそのまま読める規範集（禁止 → 代替の対応表・判定基準・コード例つき）として書かれており、チーム規約として直接採用できます。[`docs/`](./docs/jp/index.md) が担うのは設計思想で、運用規範の正本はドリフトしないよう実装の隣に置いています。
 
 
 ### 著者について
