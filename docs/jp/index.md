@@ -1,40 +1,23 @@
-# INDEX.md
-## 4層アーキテクチャ（第3層）— Doc-first 運用（汎用版）
+# docs/jp — 文書の入口
 
-このディレクトリは、AI（ClaudeCode / Codex / Cursor）と人間が **同じルールで** E2Eを構築・拡張するための文書体系です。
+## 目的別の入口
 
----
+| 来訪目的 | 読む場所 |
+|---|---|
+| Claude Code でキットを導入したい | [`claude-code-guide.md`](./claude-code-guide.md) |
+| 禁止パターン・雛形・Locator の書き方を知りたい（Claude Code を使わなくても） | [`for-claude-code/.claude/rules/`](../../for-claude-code/.claude/rules/)（規範 4 本）+ [`skills/`](../../for-claude-code/.claude/skills/) |
+| 設計思想を知りたい | [`E2ETest_Framework.md`](./E2ETest_Framework.md) / [`LOCATOR/locator_strategy.md`](./LOCATOR/locator_strategy.md) |
+| 規範がどう機械判定されるかを見たい | [`for-claude-code/scripts/gate.sh`](../../for-claude-code/scripts/gate.sh) |
 
-## 最初に読む（フェーズ別の入口）
+このディレクトリの文書は 2 種類に分かれる。
 
-### Claude Code で運用する（推奨の入口）
-- `./claude-code-guide.md` — `for-claude-code/` 運用セットの導入・運用・ウォークスルー
+## 導入・運用（実装とともに更新される）
 
-### 環境構築（Bootstrap）
-- `./bootstrap.md`
+- [`claude-code-guide.md`](./claude-code-guide.md) — **`for-claude-code/` 運用セットの導入ガイド**。前提条件・導入手順・運用フロー・チェックリストからテストができるまでのウォークスルー・カスタマイズ指針
 
-### テスト作成（Test Authoring）
-- `./test_creation_protocol.md`
+具体的な規範（禁止パターン・雛形・手順）の正本はドキュメントではなく [`for-claude-code/`](../../for-claude-code/README.md) の rules / skills / gate にある。**rules / skills は AI 専用の設定ファイルではない** — 禁止 → 代替の対応表・判定基準・コード例を備えた、人間がそのまま読める規範集として書かれている。パターン集を探しに来た読者は、ドキュメントよりまずそちらを読むほうが早く、そして古びない（実装と同じ PR で更新され続けるのは rules / skills の側だからである）。
 
----
+## 設計思想（実装が変わっても真であり続ける読み物）
 
-## 参照文書（正）
-
-### アーキテクチャ（理想構成）
-- `./E2ETest_Framework.md`
-
-### Locator Strategy（最終判断）
-- `./LOCATOR/Concept/`
-- `./LOCATOR/Universal/`
-- `./LOCATOR/productspecific/PRODUCT_A/`
-
----
-
-## 実装レシピ／トラブルシュート（直下側）
-- `CLAUDE_Selectors.md`（即効レシピ）
-- `CLAUDE_FAQ.md`（詰まったら）
-
----
-
-**最終更新**: 2026-02-02
-**管理者**: Ray Ishida
+- [`E2ETest_Framework.md`](./E2ETest_Framework.md) — **4 層アーキテクチャの設計思想**。なぜ層を分けるのか・境界はなぜ絶対か・偽陽性との戦い
+- [`LOCATOR/locator_strategy.md`](./LOCATOR/locator_strategy.md) — **Locator Strategy**。Locator は未来値である・意味空間で操作する・局所宇宙で探索する、という思想体系と優先順位ピラミッド
