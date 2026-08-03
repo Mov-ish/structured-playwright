@@ -18,3 +18,10 @@ jobs:
         with:
           node-version: 22
       - run: bash tests/check-verify-wait.test.sh
+
+  check-lang-parity:
+    name: jp/en パリティ（ファイル構成 + 見出し構造）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tests/check-lang-parity.test.sh

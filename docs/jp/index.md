@@ -1,5 +1,7 @@
 # docs/jp — 文書の入口
 
+English version: [`docs/en/`](../en/index.md)
+
 ## 目的別の入口
 
 | 来訪目的 | 読む場所 |
