@@ -164,6 +164,21 @@ await page.locator('.ant-select-item-option')   // ライブラリ固有クラ�
   .filter({ hasText: targetName }).first().click();
 ```
 
+→ 詳細（2層構造の背景・検索が必要な場合・省略表示の注意・ライブラリ別クラス表）は [ant-design-select.md](./ant-design-select.md) 参照
+
+**⚠️ 漢字2文字ラベルの自動スペース挿入で `:text-is()` が落ちる罠**: Ant Design の Button は、アイコンなしでラベルが**ちょうど漢字2文字**のとき、自動で文字の間に空白を挿入する（v4: ConfigProvider の `autoInsertSpaceInButton` / v5: `autoInsertSpace`。既定で有効）。DOM 上のテキストは `保 存` になるため、`:text-is("保存")` も `getByRole('button', { name: '保存' })` もマッチしない。3文字以上（「保存する」）・かな・英字では発生しないため、「このボタンだけなぜか取れない」という不可解な症状に見える。なお [ant-design-select.md](./ant-design-select.md) の省略表示（`text-overflow: ellipsis`）も `:text-is()` を壊すが、あちらは視覚的な切り詰め・こちらは DOM への文字挿入で**別現象**。
+
+```typescript
+// ❌ DOM 上は「保 存」（空白入り）— マッチせずタイムアウト
+page.locator('button:text-is("保存")')
+page.getByRole('button', { name: '保存' })
+
+// ✅ 空白を許容する正規表現で吸収（テスト側の非侵襲な対処）
+page.getByRole('button', { name: /^保\s?存$/ })
+```
+
+挿入の有無は antd のバージョンと ConfigProvider 設定に依存するため、導入プロジェクトで実際の DOM を確認してから対処を選ぶこと（アプリ側を触れるなら `autoInsertSpace` の無効化も選択肢）。
+
 **⚠️ 中身が空のタブが `aria-disabled` でクリック不可になる罠**: Ant Design Tabs / MUI Tabs / Radix UI Tabs などはタブの中身がゼロのとき `aria-disabled="true"` を付与する。これを知らずに `tab.click()` を呼ぶと Playwright の `click()` が actionable 待ちで **test timeout までハング**し、最悪のフィードバックループになる（数分後に Fail、原因切り分け困難）。
 → 詳細は [ant-design-tabs-disabled.md](./ant-design-tabs-disabled.md) 参照
 

@@ -164,6 +164,21 @@ await page.locator('.ant-select-item-option')   // Library-specific class
   .filter({ hasText: targetName }).first().click();
 ```
 
+→ For details (the two-layer background, when searching is needed, the truncated-display caveat, and the per-library class table), see [ant-design-select.md](./ant-design-select.md)
+
+**⚠️ Auto-inserted space in two-kanji labels breaks `:text-is()`**: Ant Design's Button automatically inserts a space between the characters when an icon-less button's label is **exactly two kanji (CJK ideographs)** (v4: ConfigProvider's `autoInsertSpaceInButton` / v5: `autoInsertSpace`; enabled by default). The DOM text becomes `保 存`, so neither `:text-is("保存")` nor `getByRole('button', { name: '保存' })` matches. Labels of three or more characters ("保存する"), kana, and Latin text do not trigger it, so it presents as a baffling "only this one button cannot be found" symptom. The truncated display (`text-overflow: ellipsis`) noted in [ant-design-select.md](./ant-design-select.md) also breaks `:text-is()`, but that is visual clipping while this is character insertion into the DOM — a **different phenomenon**. (This trap triggers only on two-kanji labels and cannot be reproduced with Latin labels, so the example below intentionally keeps the Japanese.)
+
+```typescript
+// ❌ The DOM text is 「保 存」 (with a space) — no match, times out
+page.locator('button:text-is("保存")')
+page.getByRole('button', { name: '保存' })
+
+// ✅ Absorb it with a regex that tolerates the space (non-invasive, test-side fix)
+page.getByRole('button', { name: /^保\s?存$/ })
+```
+
+Whether the space is actually inserted depends on the antd version and ConfigProvider settings, so inspect the real DOM in your project before choosing a remedy (disabling `autoInsertSpace` is also an option if you can touch the app side).
+
 **⚠️ Empty tabs become unclickable via `aria-disabled`**: Ant Design Tabs / MUI Tabs / Radix UI Tabs and others add `aria-disabled="true"` when a tab has zero content. Calling `tab.click()` without knowing this makes Playwright's `click()` **hang until the test timeout** waiting for actionability — the worst possible feedback loop (Fail after several minutes, hard to isolate the cause).
 → See [ant-design-tabs-disabled.md](./ant-design-tabs-disabled.md) for details
 
