@@ -83,7 +83,7 @@ page.locator(`span:text-is("ログイン")`)
 // ✅ 堅牢: 広いパターン+除外フィルター
 .getByRole('button', { name: /完全削除/ }).filter({ hasNotText: 'すべて' })
 ```
-※ ここでの広いパターンは「文言の微変更に耐える」ための**意図的な部分一致**であり、一意化は除外フィルター（`hasNotText`）や Local Universe が担う。**完全一致の代替**として正規表現を使う場合（antd の自動スペース回避等）は `^` `$` のアンカーが必須 — 詳細は `e2e-locator/ant-design-button-label.md`。
+※ アンカーなしの広いパターンは変更耐性目的の**意図的な部分一致** — 一意化は `hasNotText` / Local Universe が担う。**完全一致の代替**に使うなら `^` `$` 必須（antd 自動スペース回避: `e2e-locator/ant-design-button-label.md`）。
 
 ## §3. :near()（意味層が薄い要素）
 

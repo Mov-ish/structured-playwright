@@ -83,7 +83,7 @@ page.locator(`span:text-is("Log in")`)
 // ✅ Robust: broad pattern + exclusion filter
 .getByRole('button', { name: /Permanently delete/ }).filter({ hasNotText: 'all' })
 ```
-Note: the broad pattern here is a **deliberate partial match** for surviving minor copy changes — uniqueness comes from the exclusion filter (`hasNotText`) or a Local Universe. When a regex is used as a **substitute for exact matching** (e.g. working around antd's automatic space), the `^` `$` anchors are mandatory — see `e2e-locator/ant-design-button-label.md`.
+Note: an unanchored broad pattern is a **deliberate partial match** for copy-change resilience — uniqueness comes from `hasNotText` / a Local Universe. As a **substitute for exact matching**, `^` `$` are mandatory (antd auto-space workaround: `e2e-locator/ant-design-button-label.md`).
 
 ## §3. :near() (Elements with a Minimal Semantic Layer)
 
