@@ -46,6 +46,16 @@ The whole page is too large as a search space. Scoping to a semantic unit — mo
   5. Last resort: structural       comment + TODO required
 ```
 
+**The 3 text engines "look at" different places** (always keep this in mind when choosing):
+- `:text-is("x")` — exact match. Evaluated against the element's **immediate** text nodes only (does not match labels wrapped in a span etc.)
+- `:text("x")` — partial match. Considers the full subtree text, but only the **smallest** qualifying element matches
+- `:has-text("x")` — partial match. Matches **every ancestor** containing the text (the only engine that pierces nesting)
+
+Whether a visible label is an immediate text node is up to the UI library (span wrapping, automatic space insertion, etc.).
+**The default for exact leaf matching is `getByRole` + `name` + `exact: true`** (the accessible name is computed from descendants, so it is immune to nesting). `text-is` is for elements that carry immediate text (span / td / li etc.).
+Note that the default for `getByText` / `getByRole`'s `name` is a **partial match** — make exact matching explicit with `exact: true`.
+Code examples and UI-library-specific pitfalls: `e2e-locator` §2 is the canonical source.
+
 ## Decision Flowchart
 
 ```

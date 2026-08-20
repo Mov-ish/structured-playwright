@@ -28,10 +28,29 @@ page.getByPlaceholder('Search')
 
 ## §2. :has-text() / :text-is()
 
+The 3 engines "look at" different places (the list right below the priority pyramid in `rules/locator-principles.md` is canonical):
+
+| Engine | Match | Evaluated against |
+|---|---|---|
+| `:text-is("x")` | Exact | The element's **immediate** text nodes only |
+| `:text("x")` | Partial | Full subtree text; only the **smallest** element matches |
+| `:has-text("x")` | Partial | Full subtree text; **every ancestor** matches (the only engine that pierces nesting) |
+
 ```typescript
-page.locator('button:has-text("Log in")')       // Partial match
-page.locator('span:text-is("My Page")')         // Exact match (recommended)
+page.locator('button:has-text("Log in")')       // Partial match (pierces nesting)
+page.locator('span:text-is("My Page")')         // Exact match (target an element with immediate text)
 ```
+
+**text-is's immediate-text constraint**: `:text-is` does not match elements whose label is wrapped in a span etc. (silently 0 matches → timeout).
+```typescript
+// ❌ Silent on <button><span>Save</span></button> (Ant Design Button etc.)
+page.locator('button:text-is("Save")')
+
+// ✅ The default for exact leaf matching — the accessible name is computed from descendants, immune to nesting
+page.getByRole('button', { name: 'Save', exact: true })
+```
+Note: the default for `getByText` / `getByRole`'s `name` is a **partial match**. Make exact matching explicit with `exact: true`.
+Note: for Ant Design Button label pitfalls (span wrapping, automatic space insertion between two CJK characters), see `e2e-locator/ant-design-button-label.md`.
 
 **Danger of has-text**: partial matching hits unintended elements.
 ```typescript
@@ -39,10 +58,10 @@ page.locator('span:text-is("My Page")')         // Exact match (recommended)
 //   "Save now", "Save draft", "Saved", "Autosave"
 page.locator('button:has-text("Save")')
 
-// ✅ Exact match with text-is
-page.locator('button:text-is("Save")')
+// ✅ Exact match (role + name + exact)
+page.getByRole('button', { name: 'Save', exact: true })
 
-// ✅ If you must use has-text, always narrow with a Local Universe
+// ✅ If you must use has-text, always narrow with a Local Universe + qualify with an element type
 page.locator('[role="dialog"] button:has-text("Save")')
 ```
 

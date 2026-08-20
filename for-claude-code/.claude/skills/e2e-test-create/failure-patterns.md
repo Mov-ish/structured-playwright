@@ -47,6 +47,10 @@ description: "既に試して失敗したパターン集。待機・セレクタ
 | `button:has-text("...")` で三点リーダー | ❌ | 三点リーダーはSVGでありテキストではない |
 | `getByRole('row', { name })` | ❌ | accessible nameが設定されていないテーブルがある |
 | `filter({ hasNot })` でテキスト除外 | ❌ | hasNotは子要素チェック。hasNotTextが必要 |
+| `button:text-is("...")` でボタン特定 | ❌ | UIライブラリ（antd 等）はラベルをspanで包む。`:text-is` は直下テキストのみ判定 → 黙って0件でタイムアウト。`getByRole` + `name` + `exact: true` を使う |
+| 漢字2文字ラベル（「検索」等）のテキスト完全一致 | ❌ | antd の autoInsertSpace で DOM は「検 索」。text-is / has-text / role+name+exact 全滅。正規表現 `{ name: /検\s*索/ }` のみ通る |
+
+→ ラベルと DOM テキストの乖離（span 包み・自動スペース）の詳細は `e2e-locator/ant-design-button-label.md` 参照。
 
 ## Navigation 完了待機
 

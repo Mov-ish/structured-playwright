@@ -47,6 +47,10 @@ description: "A collection of patterns already tried and failed. Reference mater
 | `button:has-text("...")` for an ellipsis button | ❌ | The ellipsis is an SVG, not text |
 | `getByRole('row', { name })` | ❌ | Some tables have no accessible name set |
 | `filter({ hasNot })` to exclude text | ❌ | hasNot checks child elements; hasNotText is what's needed |
+| `button:text-is("...")` to target a button | ❌ | UI libraries (antd etc.) wrap labels in a span. `:text-is` evaluates only immediate text → silently 0 matches, then timeout. Use `getByRole` + `name` + `exact: true` |
+| Exact text match on a two-CJK-character label (「検索」etc.) | ❌ | antd's autoInsertSpace makes the DOM text 「検 索」. text-is / has-text / role+name+exact all fail. Only a regex `{ name: /検\s*索/ }` gets through |
+
+→ For details on label/DOM-text divergence (span wrapping, automatic spaces), see `e2e-locator/ant-design-button-label.md`.
 
 ## Waiting for navigation completion
 

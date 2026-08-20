@@ -128,7 +128,7 @@ Example:
 
 ```ts
 const modal = page.locator('[role="dialog"]');
-modal.locator('button:text-is("Save")');
+modal.getByRole('button', { name: 'Save', exact: true });
 ```
 
 By searching only within a range bounded by a unit of meaning:
@@ -253,7 +253,7 @@ Example:
 
 ```ts
 const modal = page.locator('[role="dialog"]');
-modal.locator('button:text-is("Save")');
+modal.getByRole('button', { name: 'Save', exact: true });
 ```
 
 Benefits:
@@ -373,7 +373,7 @@ Concept is not code itself; it is a **thinking model that guides implementation*
 
 Following the Concept:
 
-1. Meaning → text-is
+1. Meaning → role + name (exact match)
 2. Universe → dialog
 3. Uniqueness → OK
 4. Proximity complement → not needed
@@ -381,7 +381,7 @@ Following the Concept:
 → Implementation:
 
 ```ts
-modal.locator('button:text-is("Save")');
+modal.getByRole('button', { name: 'Save', exact: true });
 ```
 
 ### 8.2 "I Want to Check a Checkbox"
@@ -480,9 +480,9 @@ These carry "no meaning": they match multiple elements easily and are weak again
 ### 3.2 Examples with Uniqueness Secured (OK)
 
 ```
-button:text-is("Save")
+getByRole('button', { name: 'Save', exact: true })
 input[name="email"]
-role=button with name="Delete"
+span:text-is("My Page")
 ```
 
 Anchor on the UI's "meaning" and the Locator becomes remarkably hard to break.
@@ -493,17 +493,19 @@ Anchor on the UI's "meaning" and the Locator becomes remarkably hard to break.
 
 Text matching is one of the Playwright Locator's most powerful features — and, misused, it becomes the most fragile landmine of all.
 
-### 4.1 text-is (Exact Match) — Reach for It First
+### 4.1 Exact Match — Reach for It First
 
-```
-button:text-is("Save")
+```ts
+page.getByRole('button', { name: 'Save', exact: true })  // the default for exact leaf matching
+page.locator('span:text-is("My Page")')                  // text-is is fine for elements with immediate text
 ```
 
 - The intent is unmistakable
 - Mis-hits are extremely rare
 - It captures "meaning" most faithfully
 
-The basic policy: **text-is comes first.**
+The basic policy: **make exact matching the default.** Note that Playwright's own default is a partial match (for both `getByText` and `getByRole`'s `name`), so you must consciously opt in with `exact: true`.
+Also, `:text-is` evaluates only the element's **immediate** text nodes (see 4.3). In UI libraries that wrap labels in a span, `button:text-is(...)` silently returns 0 matches — so **the default for exact leaf matching is role + name + exact**.
 
 ### 4.2 has-text (Partial Match) — Dangerous When Misused
 
@@ -519,6 +521,43 @@ Every one of the following UI elements could match:
 
 Partial matching amplifies ambiguity, so the decision to use it must be made carefully.
 
+That said, partial matching also has a legitimate day job: **bracketing**. When `tr:has-text("...")` turns a row into a Local Universe, an exact match against the row's entire text is impossible in principle, so partial matching is the right tool. Distinguish **leaf targeting** (dangerous — be careful) from **bracketing** (its true home).
+
+### 4.3 When the Label and the DOM Text Diverge — UI Library Interference
+
+The 3 text engines "look at" different places:
+
+| Engine | Match | Evaluated against |
+|---|---|---|
+| `:text-is("x")` | Exact | The element's **immediate** text nodes only |
+| `:text("x")` | Partial | Full subtree text; only the **smallest** element matches |
+| `:has-text("x")` | Partial | Full subtree text; **every ancestor** matches (the only engine that pierces nesting) |
+
+There is no guarantee that the visible label is written into the DOM in that exact shape — because UI libraries interfere.
+
+**Interference 1: labels wrapped in a span (Ant Design Button etc.)**
+
+```html
+<button><span>Save</span></button>
+```
+
+```ts
+page.locator('button:text-is("Save")')   // ❌ the button has no immediate text node
+page.locator('button:text("Save")')      // ❌ the "smallest element" is the span, so the button loses
+page.locator('button:has-text("Save")')  // ✅ the only engine that pierces nesting
+page.getByRole('button', { name: 'Save', exact: true })  // ✅ the accessible name is computed from descendants (recommended)
+```
+
+**Interference 2: automatic space insertion into two-CJK-character labels (antd autoInsertSpace)**
+
+When a label is exactly two CJK ideographs (「検索」「保存」「削除」「編集」…), the DOM text becomes 「検 索」. text-is, has-text, and role + name + exact all fall silent; only a regular expression survives:
+
+```ts
+page.getByRole('button', { name: /検\s*索/ })  // ✅ works with or without the space
+```
+
+Playwright's whitespace normalization only collapses runs of whitespace into one — it never removes the space. The root fix lives on the app side: `<ConfigProvider button={{ autoInsertSpace: false }}>` (a request to the dev team — the same place root-fix TODOs belong).
+
 ---
 
 ## 5. Parent-Container Anchoring (the Local Universe Concept)
@@ -529,7 +568,7 @@ Example: search only within a modal.
 
 ```ts
 const modal = page.locator('[role="dialog"]');
-modal.locator('button:text-is("Save")').click();
+modal.getByRole('button', { name: 'Save', exact: true }).click();
 ```
 
 ### 5.1 Why the Local Universe Matters
@@ -682,7 +721,7 @@ button
 
 ### 9.3 The Right Level of Abstraction
 ```
-button:text-is("Save")
+getByRole('button', { name: 'Save', exact: true })
 ```
 
 The right abstraction means: can you identify the element sufficiently, without losing the meaning?
@@ -739,10 +778,10 @@ An E2E developer understands the "philosophy" of Layer 3 and practices it in Lay
 
 ## 12. Success Patterns (Best Practice)
 
-### 12.1 text-is + scope (the Strongest Combination)
+### 12.1 Exact Semantic Match + scope (the Strongest Combination)
 
 ```ts
-modal.locator('button:text-is("Save")');
+modal.getByRole('button', { name: 'Save', exact: true });
 ```
 
 - The text pins down the meaning
@@ -795,7 +834,7 @@ The following bring a high probability of test collapse:
 Check the following at implementation time and at review time:
 
 - ☑ Is uniqueness secured?
-- ☑ Could this be expressed with text-is?
+- ☑ Could this be expressed with an exact semantic match (role + name + exact / text-is)?
 - ☑ Has a parent container (Local Universe) been set?
 - ☑ Are semantic Locators given priority?
 - ☑ Was a real effort made to avoid `.first()`?
@@ -1010,7 +1049,7 @@ So the only anchor that can be trusted is:
 
 ```ts
 const modal = page.locator('[role="dialog"]');
-await modal.locator('button:text-is("Save")').click();
+await modal.getByRole('button', { name: 'Save', exact: true }).click();
 ```
 
 Benefits:
@@ -1068,7 +1107,7 @@ page.locator('button:has-text("Log in")').click();
 
 ```ts
 const modal = page.locator('[role="dialog"]');
-modal.locator('button:text-is("Save")').click();
+modal.getByRole('button', { name: 'Save', exact: true }).click();
 ```
 
 **Checkbox example:**
@@ -1149,12 +1188,12 @@ page.locator('button:has-text("Save")');
 - The same text appears in the modal and in the background
 - Partial matching mis-hits easily
 
-→ **text-is + scope (Local Universe) is mandatory.**
+→ **An exact match (role + name + exact / text-is) + scope (Local Universe) is mandatory.**
 
 ### 3.3 Searching for a Modal Across the Whole Page
 
 ```ts
-page.locator('button:text-is("Save")').click();
+page.getByRole('button', { name: 'Save', exact: true }).click();
 ```
 
 **The typical accidents:**
@@ -1188,7 +1227,7 @@ A DOM with a minimal semantic layer is a mass of nested divs in constant flux, w
 
 ```ts
 const modal = page.locator('[role="dialog"]');
-modal.locator('button:text-is("Save")').click();
+modal.getByRole('button', { name: 'Save', exact: true }).click();
 ```
 
 → Completely prevents mis-hits against the background UI.
