@@ -120,7 +120,7 @@ Concept 層は "Locator の憲法" の役割を持つ。
 優先順位トップは：
 
 ```
-text-is / role / label / name
+role / label / name / text-is
 ```
 
 理由：
@@ -135,7 +135,7 @@ text-is / role / label / name
 
 ```ts
 const modal = page.locator('[role="dialog"]');
-modal.locator('button:text-is("保存")');
+modal.getByRole('button', { name: '保存', exact: true });
 ```
 
 意味の単位で括った範囲で探索することで：
@@ -227,7 +227,7 @@ Concept 層では、Locator の選択を **5 段階の優先順位ピラミッ�
 ```
        ┌──────────────────────────────┐
        │   1. 意味ベース（Semantic）        │
-       │   text-is / role / label / name │
+       │   role / label / name / text-is │
        ├──────────────────────────────┤
        │   2. 局所宇宙（Local Universe）     │
        │   dialog / row / card / section │
@@ -264,7 +264,7 @@ page.getByLabel('メールアドレス');
 
 ```ts
 const modal = page.locator('[role="dialog"]');
-modal.locator('button:text-is("保存")');
+modal.getByRole('button', { name: '保存', exact: true });
 ```
 
 メリット：
@@ -389,7 +389,7 @@ Concept はコードそのものではなく、
 
 Concept に従う：
 
-1. 意味 → text-is
+1. 意味 → role + name（完全一致）
 2. Universe → dialog
 3. 一意性 → OK
 4. 近接補完 → 不要
@@ -397,7 +397,7 @@ Concept に従う：
 → 実装例：
 
 ```ts
-modal.locator('button:text-is("保存")');
+modal.getByRole('button', { name: '保存', exact: true });
 ```
 
 ### 8.2 「チェックボックスをチェックしたい」
@@ -500,9 +500,9 @@ div.card
 ### 3.2 一意性を確保した例（OK）
 
 ```
-button:text-is("保存")
+getByRole('button', { name: '保存', exact: true })
 input[name="email"]
-role=button with name="削除"
+span:text-is("マイページ")
 ```
 
 UI の "意味" を基準にすることで驚くほど壊れにくくなる。
@@ -514,17 +514,19 @@ UI の "意味" を基準にすることで驚くほど壊れにくくなる。
 Playwright Locator の強力な機能のひとつが「テキスト一致」だが、
 誤用するともっとも壊れやすい地雷になる。
 
-### 4.1 text-is（完全一致） ― 最優先で使うべき
+### 4.1 完全一致 ― 最優先で使うべき
 
-```
-button:text-is("保存")
+```ts
+page.getByRole('button', { name: '保存', exact: true })  // 葉の完全一致の既定
+page.locator('span:text-is("マイページ")')                // 直下にテキストを持つ要素なら text-is も可
 ```
 
 - 意図が明確
 - 誤爆が極めて少ない
 - "意味" を最も正しく取得できる
 
-基本方針：**text-is を最優先する。**
+基本方針：**完全一致を既定にする。** ただし Playwright 自体の既定は部分一致（`getByText` / `getByRole` の `name` とも）なので、`exact: true` で意識的に倒す必要がある。
+また `:text-is` の判定は要素**直下**のテキストノードのみ（詳細は 4.3）。ラベルが span で包まれる UI ライブラリでは `button:text-is(...)` は黙って 0 件になるため、**葉の完全一致の既定は role + name + exact** とする。
 
 ### 4.2 has-text（部分一致） ― 使い方を誤ると危険
 
@@ -540,6 +542,49 @@ button:has-text("保存")
 
 部分一致は「曖昧性」を増幅するため、使用判断は慎重にする。
 
+なお部分一致には「括り」という本業もある：`tr:has-text("...")` で行を局所宇宙にする用途では、行全体のテキストとの完全一致が原理的に不可能なため、部分一致が正当な道具になる。**葉の特定**（危険・慎重に）と**括り**（本命）を区別する。
+
+### 4.3 ラベルと DOM テキストの乖離 ― UI ライブラリの介入
+
+テキスト系 3 エンジンは「見ている場所」が違う：
+
+| エンジン | 一致 | 判定対象 |
+|---|---|---|
+| `:text-is("x")` | 完全一致 | 要素**直下**のテキストノードのみ |
+| `:text("x")` | 部分一致 | 子孫込み全テキスト。**最小の要素**だけマッチ |
+| `:has-text("x")` | 部分一致 | 子孫込み全テキスト。**祖先まで全部**マッチ（入れ子を貫通する唯一のエンジン） |
+
+`getByText(..., { exact: true })` は同じ「完全一致」でも判定対象が**子孫込み全テキスト**であり、`:text-is`（直下のみ）とは別物である。完全一致という言葉に引きずられて両者を同一視しないこと。
+
+見えているラベルがそのままの形で DOM に書かれている保証はない。UI ライブラリが介入するからである。
+
+**介入1：ラベルの span 包み（Ant Design Button 等）**
+
+```html
+<button><span>保存</span></button>
+```
+
+```ts
+page.locator('button:text-is("保存")')   // ❌ button 直下にテキストノードがない
+page.locator('button:text("保存")')      // ❌ 「最小の要素」は span なので button は落選
+page.locator('button:has-text("保存")')  // ✅ 唯一、入れ子を貫通する
+page.getByRole('button', { name: '保存', exact: true })  // ✅ アクセシブルネームは子孫から計算（推奨）
+```
+
+**介入2：漢字2文字ラベルへの自動スペース挿入（antd autoInsertSpace）**
+
+ラベルがちょうど漢字2文字（「検索」「保存」「削除」「編集」…）のとき、DOM テキストは「検 索」になる。text-is / has-text / role + name + exact のすべてが沈黙し、生き残るのは正規表現のみ：
+
+```ts
+page.getByRole('button', { name: /^検\s*索$/ })  // ✅ スペースの有無どちらでも通る
+```
+
+`^` `$` を省かないこと。role の `name` に渡した正規表現は**部分一致**で評価されるため、`/検\s*索/` は「再検索」にも当たる。完全一致を既定にする方針の逃げ道が部分一致では意味がない。
+
+ただし挿入は無条件ではない ― ラベルが単一の子である・アイコンなし・`type` が `text` / `link` 以外、をすべて満たしたときだけ起きる。アイコン付きボタンには入らない。
+
+Playwright の空白正規化は「連続空白を 1 個に畳む」処理であり、スペースを消してはくれない。根本解決はアプリ側で autoInsertSpace を切ること（開発チームへの依頼 = 根本解決の TODO の置き場所）。書式は antd 5.17 以降が `<ConfigProvider button={{ autoInsertSpace: false }}>`、4.x / 5.17 未満は `<ConfigProvider autoInsertSpaceInButton={false}>`。
+
 ---
 
 ## 5. 親コンテナ anchoring（Local Universe の概念）
@@ -550,7 +595,7 @@ Locator は「局所宇宙（Local Universe）」で使うと安定する。
 
 ```ts
 const modal = page.locator('[role="dialog"]');
-modal.locator('button:text-is("保存")').click();
+modal.getByRole('button', { name: '保存', exact: true }).click();
 ```
 
 ### 5.1 なぜ Local Universe が重要なのか？
@@ -710,7 +755,7 @@ button
 
 ### 9.3 正しい抽象度
 ```
-button:text-is("保存")
+getByRole('button', { name: '保存', exact: true })
 ```
 
 抽象度とは「意味を損なわずに必要十分な特定ができるか」である。
@@ -770,10 +815,10 @@ E2E 開発者は第3層の"思想"を理解し、第2層で実践する。
 
 ## 12. 成功パターン（Best Practice）
 
-### 12.1 text-is + scope（最強の組み合わせ）
+### 12.1 意味の完全一致 + scope（最強の組み合わせ）
 
 ```ts
-modal.locator('button:text-is("保存")');
+modal.getByRole('button', { name: '保存', exact: true });
 ```
 
 - 文言で意味を確定
@@ -828,7 +873,7 @@ Locator 定義（静的）と動的値の適用（POM）を分離することで
 実装時・レビュー時には次の項目を確認する：
 
 - ☑ 一意性は確保されているか？
-- ☑ text-is で表現できないか？
+- ☑ 意味の完全一致（role + name + exact / text-is）で表現できないか？
 - ☑ 親コンテナ（Local Universe）を設定したか？
 - ☑ セマンティック Locator を優先しているか？
 - ☑ `.first()` から逃げる努力をしたか？
@@ -843,7 +888,7 @@ Locator 定義（静的）と動的値の適用（POM）を分離することで
 Playwright Locator の普遍原則は次の 4 本柱に集約される：
 
 ```text
-1. 意味を捉える（text-is / role）
+1. 意味を捉える（role + name + exact / text-is）
 2. 宇宙を限定する（scope / Local Universe）
 3. 偶然を排除する（一意性の確保）
 4. 構造に依存しない（anti-XPath）
@@ -935,7 +980,7 @@ HTML / UI の構造的問題により、
 
 UI 文言の重複により、
 
-- text-is だけでは一意化できない
+- 完全一致だけでは一意化できない
 - partial テキスト一致では誤爆しやすい
 
 → **Local Universe（親コンテナ）や near() が必須になる背景。**
@@ -1052,7 +1097,7 @@ page.locator('input[type="checkbox"]:near(:text("利用規約に同意する"))'
 
 ```ts
 const modal = page.locator('[role="dialog"]');
-await modal.locator('button:text-is("保存")').click();
+await modal.getByRole('button', { name: '保存', exact: true }).click();
 ```
 
 メリット：
@@ -1112,7 +1157,7 @@ page.locator('button:has-text("ログイン")').click();
 
 ```ts
 const modal = page.locator('[role="dialog"]');
-modal.locator('button:text-is("保存")').click();
+modal.getByRole('button', { name: '保存', exact: true }).click();
 ```
 
 **チェックボックス例：**
@@ -1149,7 +1194,7 @@ row.locator('button:has(svg[data-icon="edit"])').click();
    └ Yes → セマンティック Locator
    └ No →
         ② UI 文言は唯一か？
-           └ Yes → text-is
+           └ Yes → 完全一致（role + name + exact / 直下テキストなら text-is）
            └ No →
                 ③ 文言と対象要素は近接しているか？
                    └ Yes → near()
@@ -1195,12 +1240,12 @@ page.locator('button:has-text("保存")');
 - モーダルと背景で同じ文言が出る
 - 部分一致は誤爆が発生しやすい
 
-→ **text-is + scope（Local Universe）が必須。**
+→ **完全一致（role + name + exact / text-is） + scope（Local Universe）が必須。**
 
 ### 3.3 モーダルを page 全体で探索する
 
 ```ts
-page.locator('button:text-is("保存")').click();
+page.getByRole('button', { name: '保存', exact: true }).click();
 ```
 
 **典型的な事故**
@@ -1232,11 +1277,11 @@ XPath は **ほぼ即死レベルの不安定さ**を持つ。
 
 ## 4. 成功パターン（固有ルールに基づく安定手法）
 
-### 4.1 text-is + role="dialog"（最強モーダル戦略）
+### 4.1 完全一致 + role="dialog"（最強モーダル戦略）
 
 ```ts
 const modal = page.locator('[role="dialog"]');
-modal.locator('button:text-is("保存")').click();
+modal.getByRole('button', { name: '保存', exact: true }).click();
 ```
 
 → 背景 UI への誤爆を完全に防止。
@@ -1301,7 +1346,7 @@ row.locator('button:has(svg[data-icon="delete"])');
 
 ### テキスト
 ☑ has-text 乱用していないか？
-☑ text-is で一意性が取れているか？
+☑ 完全一致（role + name + exact / text-is）で一意性が取れているか？
 
 ### 構造依存
 ☑ CSS-only や XPath が混ざっていないか？

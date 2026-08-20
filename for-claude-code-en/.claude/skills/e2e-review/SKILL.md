@@ -117,7 +117,7 @@ grep -rn "\.catch(() => false)\|\.catch(() => true)" src/
   - Comment present, TODO present → recorded as A (accidental pinning). Confirm the reason comment accurately describes reality
   - **When in doubt, choose A** (add a TODO)
 - [ ] Does each `waitForTimeout` reason comment explain "which preceding operation is being waited on, and for what" — the **presence** of the comment is already gate-detected ❌ in §2.0. Eyeballing targets the **content** (a paraphrase of the constant name, e.g. `// wait for SPA rendering to complete`, is not acceptable)
-- [ ] Was `:has-text()` → `:text-is()` (exact match) considered?
+- [ ] Was `:has-text()` → an exact match (`getByRole`+`name`+`exact: true`, or `:text-is()` for immediate text) considered?
 - [ ] Local Universe (parent-element scoping) is used
 - [ ] AAA pattern, result verification, data cleanup
 - [ ] Test names are specific

@@ -23,7 +23,7 @@ gate column: ✓ = detected mechanically by `npm run gate` (exit 1) / ⚠️ = s
 | `waitForTimeout()` in a Page Object | Fixed waits belong to the Action layer | `waitFor()` + try-catch | ⚠️ |
 | `waitForTimeout()` inside a verify method (boolean) | The correctness of the judgment hinges on the wait duration + double waiting (see below) | Consolidate waits on the operation-method side; verify observes only (the gate detects this mechanically via AST) | ✓ |
 | Semantic Locators on elements with a minimal semantic layer | Do not work due to missing attributes | `:near()` / `svg[data-icon]` | — |
-| Using `has-text` without a scope | Same text appears multiple times → mis-hits | Narrow with `text-is` or a Local Universe | — |
+| Using `has-text` without a scope | Same text appears multiple times → mis-hits | Narrow with role+name+exact or a Local Universe | — |
 | Searching for a modal across the whole `page` | Accidental clicks on background buttons | Confine with `[role="dialog"]` | — |
 | The `locator(SELECTORS.MODAL).last()` hybrid | The worst combination: slapping the stale-workaround `.last()` onto an attribute selector that does not exclude hidden elements (see below) | Active modal: `getByRole('dialog').last()` / single-modal scoping: `SELECTORS.MODAL` without `.last()` | ✓ |
 | Module-scope random value + implicit dependency across multiple `test()` blocks | No partial execution, no reuse in other tests (see below) | Parameterize / Setup Action / `beforeAll` (see `architecture.md`) | ⚠️ |

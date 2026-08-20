@@ -28,10 +28,30 @@ page.getByPlaceholder('検索')
 
 ## §2. :has-text() / :text-is()
 
+3エンジンは「見ている場所」が違う（`rules/locator-principles.md` 優先順位ピラミッド直下の一覧が正本）:
+
+| エンジン | 一致 | 判定対象 |
+|---|---|---|
+| `:text-is("x")` | 完全一致 | 要素**直下**のテキストノードのみ |
+| `:text("x")` | 部分一致 | 子孫込み全テキスト。**最小の要素**だけマッチ |
+| `:has-text("x")` | 部分一致 | 子孫込み全テキスト。**祖先まで全部**マッチ（入れ子を貫通する唯一のエンジン） |
+
 ```typescript
-page.locator('button:has-text("ログイン")')       // 部分一致
-page.locator('span:text-is("マイページ")')         // 完全一致（推奨）
+page.locator('button:has-text("ログイン")')       // 部分一致（入れ子を貫通）
+page.locator('span:text-is("マイページ")')         // 完全一致（直下にテキストを持つ要素を狙う）
 ```
+
+**text-is の直下テキスト制約**: ラベルが span 等で包まれた要素には `:text-is` はマッチしない（黙って0件→タイムアウト）。
+```typescript
+// ❌ <button><span>保存</span></button>（Ant Design Button 等）では沈黙する
+page.locator('button:text-is("保存")')
+
+// ✅ 葉の完全一致の既定 — アクセシブルネームは子孫から計算されるため入れ子に免疫
+page.getByRole('button', { name: '保存', exact: true })
+```
+※ `getByText` / `getByRole` の `name` の既定は**部分一致**。完全一致は `exact: true` で明示する。
+※ `getByText(..., { exact: true })` は同じ「完全一致」でも判定対象が**子孫込み全テキスト**であり、`:text-is`（直下のみ）とは別物。span 包みでも通るのはこちら。
+※ Ant Design Button のラベル罠（span 包み・漢字2文字の自動スペース挿入）の詳細と対処は `e2e-locator/ant-design-button-label.md`。
 
 **has-text の危険性**: 部分一致のため意図しない要素にマッチする。
 ```typescript
@@ -39,10 +59,10 @@ page.locator('span:text-is("マイページ")')         // 完全一致（推奨
 //   「保存する」「下書きを保存」「保存済みです」「一時保存」
 page.locator('button:has-text("保存")')
 
-// ✅ text-is で完全一致
-page.locator('button:text-is("保存")')
+// ✅ 完全一致（role + name + exact）
+page.getByRole('button', { name: '保存', exact: true })
 
-// ✅ has-text を使う場合は必ず Local Universe で絞る
+// ✅ has-text を使う場合は必ず Local Universe で絞る + 要素型で限定する
 page.locator('[role="dialog"] button:has-text("保存")')
 ```
 
@@ -63,6 +83,7 @@ page.locator(`span:text-is("ログイン")`)
 // ✅ 堅牢: 広いパターン+除外フィルター
 .getByRole('button', { name: /完全削除/ }).filter({ hasNotText: 'すべて' })
 ```
+※ アンカーなしの広いパターンは変更耐性目的の**意図的な部分一致** — 一意化は `hasNotText` / Local Universe が担う。**完全一致の代替**に使うなら `^` `$` 必須（antd 自動スペース回避: `e2e-locator/ant-design-button-label.md`）。
 
 ## §3. :near()（意味層が薄い要素）
 
