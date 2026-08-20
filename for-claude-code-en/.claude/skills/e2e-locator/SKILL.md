@@ -50,6 +50,7 @@ page.locator('button:text-is("Save")')
 page.getByRole('button', { name: 'Save', exact: true })
 ```
 Note: the default for `getByText` / `getByRole`'s `name` is a **partial match**. Make exact matching explicit with `exact: true`.
+Note: `getByText(..., { exact: true })` is exact too, but it is evaluated against the **full subtree text**, unlike `:text-is` (immediate only) — so it does get through span wrapping.
 Note: for Ant Design Button label pitfalls (span wrapping, automatic space insertion between two CJK characters), see `e2e-locator/ant-design-button-label.md`.
 
 **Danger of has-text**: partial matching hits unintended elements.

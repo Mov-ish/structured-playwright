@@ -113,7 +113,7 @@ The universal rules compress into four principles:
 The top of the priority order is:
 
 ```
-text-is / role / label / name
+role / label / name / text-is
 ```
 
 Why:
@@ -216,7 +216,7 @@ The Concept layer systematizes Locator selection as a **5-level priority pyramid
 ```
        ┌──────────────────────────────┐
        │   1. Semantic-Based               │
-       │   text-is / role / label / name   │
+       │   role / label / name / text-is   │
        ├──────────────────────────────┤
        │   2. Local Universe               │
        │   dialog / row / card / section   │
@@ -533,6 +533,8 @@ The 3 text engines "look at" different places:
 | `:text("x")` | Partial | Full subtree text; only the **smallest** element matches |
 | `:has-text("x")` | Partial | Full subtree text; **every ancestor** matches (the only engine that pierces nesting) |
 
+`getByText(..., { exact: true })` is exact too, but it is evaluated against the **full subtree text** — unlike `:text-is`, which sees immediate text only. Do not treat the two as equivalent just because both are called "exact".
+
 There is no guarantee that the visible label is written into the DOM in that exact shape — because UI libraries interfere.
 
 **Interference 1: labels wrapped in a span (Ant Design Button etc.)**
@@ -553,10 +555,14 @@ page.getByRole('button', { name: 'Save', exact: true })  // ✅ the accessible n
 When a label is exactly two CJK ideographs (「検索」「保存」「削除」「編集」…), the DOM text becomes 「検 索」. text-is, has-text, and role + name + exact all fall silent; only a regular expression survives:
 
 ```ts
-page.getByRole('button', { name: /検\s*索/ })  // ✅ works with or without the space
+page.getByRole('button', { name: /^検\s*索$/ })  // ✅ works with or without the space
 ```
 
-Playwright's whitespace normalization only collapses runs of whitespace into one — it never removes the space. The root fix lives on the app side: `<ConfigProvider button={{ autoInsertSpace: false }}>` (a request to the dev team — the same place root-fix TODOs belong).
+Do not drop the `^` `$`. A regular expression passed to role's `name` is evaluated as a **partial** match, so `/検\s*索/` also hits 「再検索」. An escape hatch that is itself a partial match defeats the "exact by default" policy.
+
+The insertion is not unconditional, though — it happens only when the label is the single child, there is no icon, and `type` is neither `text` nor `link`. Icon buttons never get the space.
+
+Playwright's whitespace normalization only collapses runs of whitespace into one — it never removes the space. The root fix lives on the app side: turn autoInsertSpace off (a request to the dev team — the same place root-fix TODOs belong). The syntax is `<ConfigProvider button={{ autoInsertSpace: false }}>` on antd 5.17+, and `<ConfigProvider autoInsertSpaceInButton={false}>` on 4.x / before 5.17.
 
 ---
 
@@ -849,7 +855,7 @@ Check the following at implementation time and at review time:
 The universal principles of the Playwright Locator condense into four pillars:
 
 ```text
-1. Capture meaning (text-is / role)
+1. Capture meaning (role + name + exact / text-is)
 2. Limit the universe (scope / Local Universe)
 3. Eliminate coincidence (secure uniqueness)
 4. Do not depend on structure (anti-XPath)
@@ -936,7 +942,7 @@ Representative examples:
 
 Because the UI's text is duplicated:
 
-- text-is alone cannot achieve uniqueness
+- An exact match alone cannot achieve uniqueness
 - partial text matching mis-hits easily
 
 → **This is the background that makes the Local Universe (parent container) and near() indispensable.**
@@ -1143,7 +1149,7 @@ Examples:
    └ Yes → Semantic Locator
    └ No →
         ② Is the UI text unique?
-           └ Yes → text-is
+           └ Yes → exact match (role + name + exact / text-is if immediate text)
            └ No →
                 ③ Are the text and the target element in proximity?
                    └ Yes → near()
@@ -1223,7 +1229,7 @@ A DOM with a minimal semantic layer is a mass of nested divs in constant flux, w
 
 ## 4. Success Patterns (Stable Techniques Built on the Product-Specific Rules)
 
-### 4.1 text-is + role="dialog" (the Strongest Modal Strategy)
+### 4.1 Exact Match + role="dialog" (the Strongest Modal Strategy)
 
 ```ts
 const modal = page.locator('[role="dialog"]');
@@ -1291,7 +1297,7 @@ Bracketing the UI along units of meaning is the greatest defense this kind of pr
 
 ### Text
 ☑ No has-text abuse?
-☑ Is uniqueness achieved with text-is?
+☑ Is uniqueness achieved with an exact match (role + name + exact / text-is)?
 
 ### Structural Dependency
 ☑ No CSS-only or XPath mixed in?

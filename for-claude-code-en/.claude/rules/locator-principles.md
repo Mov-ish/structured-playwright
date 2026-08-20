@@ -53,7 +53,7 @@ The whole page is too large as a search space. Scoping to a semantic unit — mo
 
 Whether a visible label is an immediate text node is up to the UI library (span wrapping, automatic space insertion, etc.).
 **The default for exact leaf matching is `getByRole` + `name` + `exact: true`** (the accessible name is computed from descendants, so it is immune to nesting). `text-is` is for elements that carry immediate text (span / td / li etc.).
-Note that the default for `getByText` / `getByRole`'s `name` is a **partial match** — make exact matching explicit with `exact: true`.
+Note that the default for `getByText` / `getByRole`'s `name` is a **partial match** — make exact matching explicit with `exact: true`. `getByText`'s `exact` matches the full subtree text, so it is not the same thing as `:text-is` (immediate text only).
 Code examples and UI-library-specific pitfalls: `e2e-locator` §2 is the canonical source.
 
 ## Decision Flowchart
@@ -63,7 +63,7 @@ Code examples and UI-library-specific pitfalls: `e2e-locator` §2 is the canonic
    └ Yes → semantic Locator / data-testid
    └ No →
         ② Is the UI text unique?
-           └ Yes → text-is (exact match)
+           └ Yes → exact match (role+name+exact / text-is if immediate text)
            └ No →
                 ③ Are the text and the target element adjacent?
                    └ Yes → near()

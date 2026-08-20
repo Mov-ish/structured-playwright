@@ -23,7 +23,7 @@ gate 列: ✓ = `npm run gate` が機械検出（exit 1）/ ⚠️ = gate が警
 | Page Objectで `waitForTimeout()` | 固定待機はAction層で行う | `waitFor()` + try-catch | ⚠️ |
 | verify メソッド (boolean) 内の `waitForTimeout()` | 判定の正しさが待ち時間に賭かる + 二重待機（下記参照） | 待機は操作メソッド側に集約、verify は観測のみ（gate が AST で機械検出） | ✓ |
 | 意味層の薄い要素にセマンティックLocator | 属性不足で動作しない | `:near()` / `svg[data-icon]` | — |
-| `has-text` をスコープなしで使用 | 同じ文言が複数→誤爆 | `text-is` or Local Universe で絞る | — |
+| `has-text` をスコープなしで使用 | 同じ文言が複数→誤爆 | role+name+exact or Local Universe で絞る | — |
 | モーダルを `page` 全体で探索 | 背景ボタン誤クリック | `[role="dialog"]` で閉じ込め | — |
 | `locator(SELECTORS.MODAL).last()` ハイブリッド | hidden を除外しない属性セレクタに stale 対策の `.last()` を貼る最悪の組合せ（下記参照） | アクティブモーダルは `getByRole('dialog').last()` / 単一スコープは `.last()` なしの `SELECTORS.MODAL` | ✓ |
 | module スコープ乱数 + 複数 `test()` 暗黙依存 | 部分実行不可・別テスト再利用不可（下記参照） | 引数化 / Setup Action / `beforeAll`（`architecture.md` 参照） | ⚠️ |

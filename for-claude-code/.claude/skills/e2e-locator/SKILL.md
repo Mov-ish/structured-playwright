@@ -50,6 +50,7 @@ page.locator('button:text-is("保存")')
 page.getByRole('button', { name: '保存', exact: true })
 ```
 ※ `getByText` / `getByRole` の `name` の既定は**部分一致**。完全一致は `exact: true` で明示する。
+※ `getByText(..., { exact: true })` は同じ「完全一致」でも判定対象が**子孫込み全テキスト**であり、`:text-is`（直下のみ）とは別物。span 包みでも通るのはこちら。
 ※ Ant Design Button のラベル罠（span 包み・漢字2文字の自動スペース挿入）の詳細と対処は `e2e-locator/ant-design-button-label.md`。
 
 **has-text の危険性**: 部分一致のため意図しない要素にマッチする。

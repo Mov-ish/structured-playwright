@@ -53,7 +53,7 @@ Locatorは今DOMに要素が存在しなくてもよい。遅延評価・自動�
 
 見えているラベルが直下テキストである保証は UI ライブラリ次第（span 包み・自動スペース挿入等）。
 **葉の完全一致の既定は `getByRole` + `name` + `exact: true`**（アクセシブルネームは子孫から計算されるため入れ子に免疫）。`text-is` は「直下にテキストを持つ要素」（span / td / li 等）用。
-なお `getByText` / `getByRole` の `name` の既定は**部分一致** — 完全一致は `exact: true` で明示する。
+なお `getByText` / `getByRole` の `name` の既定は**部分一致** — 完全一致は `exact: true` で明示する。`getByText` の `exact` は子孫込み全テキストでの完全一致であり `:text-is`（直下判定）とは別物。
 コード例と UI ライブラリ固有の罠は `e2e-locator` §2 が正本。
 
 ## 判断フローチャート
@@ -63,7 +63,7 @@ Locatorは今DOMに要素が存在しなくてもよい。遅延評価・自動�
    └ Yes → セマンティック Locator / data-testid
    └ No →
         ② UI 文言は唯一か？
-           └ Yes → text-is（完全一致）
+           └ Yes → 完全一致（role+name+exact ／ 直下テキストなら text-is）
            └ No →
                 ③ 文言と対象要素は近接？
                    └ Yes → near()
