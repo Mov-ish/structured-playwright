@@ -39,4 +39,4 @@
 
 前提条件・Stop フックの仕組み・gate の各チェックが守るもの・baseline の運用・**サンプル手順書からテストができるまでのウォークスルー**・カスタマイズ指針は、導入ガイドを参照:
 
-**→ [docs/jp/claude-code-guide.md](../docs/jp/claude-code-guide.md)**（現在は日本語のみ）
+**→ [docs/jp/claude-code-guide.md](../docs/jp/claude-code-guide.md)**（英語版は [docs/en/claude-code-guide.md](../docs/en/claude-code-guide.md)）
