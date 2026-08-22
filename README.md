@@ -25,6 +25,17 @@ This architecture separates concerns across 4 distinct layers:
 4. **Layer 4: Config/Env** - Environment configuration and settings
 
 
+### Articles
+
+The thinking behind this repository is written up as an ongoing series on Zenn (in Japanese). The documentation says *what* the standards are; the articles say *why* they were decided that way.
+
+- [Structured Playwright —— 継続性から設計するE2Eテストの4層構造とハーネス](https://zenn.dev/mov_ish/articles/structured-playwright-e2e) — the overview: the three ways E2E suites die (fragile / bloated / abandoned), and how the 4 layers bound the reach of a change
+- [Structured Playwright —— 変更に強いLocatorの設計](https://zenn.dev/mov_ish/articles/structured-playwright-locator) — the Locator priority pyramid and the A/B/C classification of ordinal selectors
+- [「リグレッションベース」——スプリントを重ねても破綻しないテスト管理の考え方](https://zenn.dev/mov_ish/articles/regression-base-concept) — background: the test-management idea this architecture assumes
+
+The series is ongoing — the current list is at [zenn.dev/mov_ish](https://zenn.dev/mov_ish).
+
+
 ### Getting Started (Claude Code)
 
 The [`for-claude-code-en/`](./for-claude-code-en/) directory is a drop-in kit for Claude Code: copy `.claude/`, `scripts/`, and `CLAUDE.md` into your project, and generate maintainable 4-layer Playwright tests from test procedures, checklists, or user stories — guarded by a mechanical gate (`npm run gate`). See [for-claude-code-en/README.md](./for-claude-code-en/README.md) and the setup guide at [docs/en/claude-code-guide.md](./docs/en/claude-code-guide.md). (The Japanese original of the kit lives in [`for-claude-code/`](./for-claude-code/).)
@@ -67,6 +78,17 @@ If this template helps your project, a mention in your README or blog — or a s
 2. **Layer 2: Actions** - ビジネスロジック・複数画面フロー  
 3. **Layer 3: Tests** - テストシナリオ・検証（AAAパターン）
 4. **Layer 4: Config/Env** - 環境設定・環境変数
+
+
+### 解説記事
+
+この設計の背景は Zenn の連載として書いています。ドキュメントが「何をどう書くか」を規定するのに対し、連載は「なぜそう決めたか」を扱います。
+
+- [Structured Playwright —— 継続性から設計するE2Eテストの4層構造とハーネス](https://zenn.dev/mov_ish/articles/structured-playwright-e2e) — 総論。E2E テストの 3 つの末路（壊れやすい / 太る / 捨てられる）と、4 層で変更の届く範囲を設計する話
+- [Structured Playwright —— 変更に強いLocatorの設計](https://zenn.dev/mov_ish/articles/structured-playwright-locator) — Locator の優先順位ピラミッドと、ordinal セレクタの A/B/C 分類
+- [「リグレッションベース」——スプリントを重ねても破綻しないテスト管理の考え方](https://zenn.dev/mov_ish/articles/regression-base-concept) — 前提となるテスト管理の考え方（このリポジトリより前の話）
+
+連載は不定期で継続中です。最新の一覧は [zenn.dev/mov_ish](https://zenn.dev/mov_ish) にあります。
 
 
 ### はじめかた（Claude Code）
