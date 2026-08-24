@@ -29,8 +29,8 @@ The canonical source for the concrete standards (prohibited patterns, templates,
 
 The design philosophy of this repository is written up as a series on Zenn (in Japanese). The documents here specify *what* the standards are; the series covers *why* they were decided that way.
 
-- [Structured Playwright —— 継続性から設計するE2Eテストの4層構造とハーネス](https://zenn.dev/mov_ish/articles/structured-playwright-e2e) — the overview: the three ways an E2E suite dies (fragile / bloated / abandoned), and designing how far a change reaches across the 4 layers (pairs with [`E2ETest_Framework.md`](./E2ETest_Framework.md))
-- [Structured Playwright —— 変更に強いLocatorの設計](https://zenn.dev/mov_ish/articles/structured-playwright-locator) — the Locator priority pyramid and the A/B/C classification of ordinal selectors (pairs with [`LOCATOR/locator_strategy.md`](./LOCATOR/locator_strategy.md))
+- [Structured Playwright (1) —— 継続性から設計するE2Eテストの4層構造とハーネス](https://zenn.dev/mov_ish/articles/structured-playwright-e2e) — the overview: the three ways an E2E suite dies (fragile / bloated / abandoned), and designing how far a change reaches across the 4 layers (pairs with [`E2ETest_Framework.md`](./E2ETest_Framework.md))
+- [Structured Playwright (2) —— 変更に強いLocatorの設計](https://zenn.dev/mov_ish/articles/structured-playwright-locator) — the Locator priority pyramid and the A/B/C classification of ordinal selectors (pairs with [`LOCATOR/locator_strategy.md`](./LOCATOR/locator_strategy.md))
 - [「リグレッションベース」——スプリントを重ねても破綻しないテスト管理の考え方](https://zenn.dev/mov_ish/articles/regression-base-concept) — background: the test-management layer this architecture sits on top of
 
 The series is ongoing and this list can lag behind, so treat [zenn.dev/mov_ish](https://zenn.dev/mov_ish) as the current index.
