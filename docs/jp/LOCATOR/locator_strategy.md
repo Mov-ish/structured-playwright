@@ -1,5 +1,5 @@
 # Locator Strategy
-### ― 4層アーキテクチャ第3層：Locator 設計思想 / 普遍ルール / 固有ルール ―
+### ― Locator 設計思想 / 普遍ルール / 固有ルール ―
 
 本書は、Playwright E2E における **Locator 戦略の全体系**を収録する。
 文書は以下の 3 つの観点で構成される：
@@ -14,8 +14,9 @@
 
 ## 0. Concept の役割
 
-Locator は「第1層（Playwright 技術）」の機能でありながら、
-その使い方のルールは **第3層（Concept / Principles）** が支配する。
+Playwright API が定めるのは「Locator で何ができるか」まで。
+同じ要素にたどり着く書き方は何通りもあり、どれを選ぶべきかは API の外の問題である。
+その選択を支配するのが **本書の Concept（規範）** である。
 
 なぜなら Locator は：
 
@@ -27,8 +28,8 @@ Locator は「第1層（Playwright 技術）」の機能でありながら、
 
 すべてに影響する"中核構造"だからである。
 
-Concept 層は **「どう書くか」ではなく「なぜそう書くのか」** を統一する層であり、
-4層アーキテクチャの思想的中心となる。
+Concept は **「どう書くか」ではなく「なぜそう書くのか」** を統一する規範であり、
+4 層アーキテクチャの外側から Locator の書き方を規定する。
 
 ---
 
@@ -37,7 +38,7 @@ Concept 層は **「どう書くか」ではなく「なぜそう書くのか」
 Locator を単なる「要素の取得」と捉えると、
 設計思想の深みや Playwright の強みを理解し損なう。
 
-Concept 層での定義はこうなる：
+Concept での定義はこうなる：
 
 ```
 Locator =
@@ -95,19 +96,19 @@ Locator 設計における最重要概念のひとつ。
 
 ---
 
-## 2. Concept 層の目的：思想を統一する
+## 2. Concept の目的：思想を統一する
 
-Concept 層は「実装テクニック」ではなく、
+Concept は「実装テクニック」ではなく、
 **Locator 設計の哲学・優先順位・禁止事項** を定義する。
 
 これにより：
 
-- PageObject（第2層）が迷わなくなる
-- テストコード（第4層）が Locator を書かなくなる
+- Page Object 層（Layer 1）が迷わなくなる
+- Actions 層（Layer 2）と Tests 層（Layer 3）が Locator を書かなくなる
 - AI（Codex / Claude）が誤った Locator を生成しない
 - チーム全体の Locator 品質が統一される
 
-Concept 層は "Locator の憲法" の役割を持つ。
+Concept は "Locator の憲法" の役割を持つ。
 
 ---
 
@@ -163,11 +164,11 @@ page.locator('button').first().click();
 
 これらは DOM 変更への耐性が低すぎる。
 
-Concept 層では **構造依存そのものを思想として否定**する。
+Concept では **構造依存そのものを思想として否定**する。
 
 ---
 
-## 4. 固有ルールが Concept 層に統合される理由
+## 4. 固有ルールが Concept に統合される理由
 
 意味層が薄い UI は以下の構造的特徴を持つ：
 
@@ -179,14 +180,14 @@ Concept 層では **構造依存そのものを思想として否定**する。
 
 これらにより、普遍原則をそのまま適用するだけでは安定性が足りない。
 
-Concept 層では固有ルールを **「例外」ではなく「構造的必然」** として扱う。
+Concept では固有ルールを **「例外」ではなく「構造的必然」** として扱う。
 
 ### 4.1 near() の哲学的位置づけ
 
 本来 near() は補助的だが、
 意味情報が不足する UI では **意味の代替物** として機能する。
 
-Concept 層では次のように規定する：
+Concept では次のように規定する：
 
 ```
 意味情報が不足する UI では、近接関係を意味として扱う。
@@ -222,7 +223,7 @@ UI ライブラリが icon に安定した data-icon を付与するため、
 
 ## 5. Locator 優先順位体系（Locator Priority Pyramid）
 
-Concept 層では、Locator の選択を **5 段階の優先順位ピラミッド**として体系化する。
+Concept では、Locator の選択を **5 段階の優先順位ピラミッド**として体系化する。
 
 ```
        ┌──────────────────────────────┐
@@ -312,7 +313,7 @@ page.locator('div > div:nth-child(2) > button');
 
 ## 6. AI エージェントが守る Locator 思想（Codex / ChatGPT / Claude 用）
 
-Concept 層は **AI の出力品質を統制するルールセット**でもある。
+Concept は **AI の出力品質を統制するルールセット**でもある。
 
 AI が必ず守るべき思想：
 
@@ -332,7 +333,7 @@ AI が必ず守るべき思想：
 - 意味層の薄い DOM と相性最悪
 - AI が誤生成しやすい
 
-→ Concept 層では "構造依存の否定" が必須。
+→ Concept では "構造依存の否定" が必須。
 
 ### 6.3 Locator の優先順位ピラミッドに従う
 
@@ -360,23 +361,30 @@ AI が Locator を生成する際は：
 
 ## 7. 4 層アーキテクチャとの接続（Concept の位置づけ）
 
-Concept 層は 4 層アーキテクチャにおいて **思想を規定する中心層** である。
+Concept は 4 層アーキテクチャの層ではない。**層の外から、Locator の書き方を規定する規範** である。
 
 ```
-┌──────────────────────────────┐
-│  第4層：Test（Scenario）     │ ← Locator を書かない
-├──────────────────────────────┤
-│  第3層：Concept（Principles）│ ← Locator の思想・優先度
-├──────────────────────────────┤
-│  第2層：PageObject / Actions  │ ← Locator を実装する層
-├──────────────────────────────┤
-│  第1層：Playwright API        │ ← 技術の基盤
-└──────────────────────────────┘
+     Concept（本書の規範）
+     Locator の思想・優先順位・禁止事項
+              │ 規定する
+              ▼
+┌───────────────────────────────────────────────────┐
+│  Layer 3: Tests         Locator を書かない        │
+│  Layer 2: Actions       Locator を書かない        │
+│  Layer 1: Page Objects  Locator を実装する        │
+├───────────────────────────────────────────────────┤
+│  Layer 4: Config/Env    共通セレクタを一元管理    │
+│                         （Page Object が参照する）│
+└───────────────────────────────────────────────────┘
 ```
+
+Layer 4 は上の 3 層と並ぶ実行の段ではなく、**全層が参照する値の置き場**である。
+Locator に関わるのは `SELECTORS.MODAL` のような共通セレクタで、Page Object が
+ここを参照することで、同じセレクタが複数ファイルに散らばるのを防ぐ。
 
 テストの目的は **UI を操作することではなく、意図を表現すること**。
-Locator は POM（第2層）に閉じ込め、
-Test（第4層）からは排除する。
+Locator は Page Object（Layer 1）に閉じ込め、
+Actions（Layer 2）と Tests（Layer 3）からは排除する。
 
 ---
 
@@ -430,7 +438,7 @@ row.locator('button:has(svg[data-icon="edit"])');
 
 ## 9. Concept のまとめ（最上位原理）
 
-Concept 層の思想は次の 4 点で集約される：
+Concept の思想は次の 4 点で集約される：
 
 ```
 1. 意味を最優先で捉える
@@ -804,12 +812,12 @@ ChatGPT や Claude は XPath の安定生成が苦手であり、
 
 4 層アーキテクチャと密接に関係する：
 
-- **第1層（Playwright API）**：技術の実体
-- **第2層（PageObject / Actions）**：Locator を具体的に実装する場所
-- **第3層（Concept）**：Locator の思想・禁止事項
-- **第4層（Test）**：Locator を直接触ってはならない層
+- **Layer 1（Page Objects）**：Locator を具体的に実装する場所
+- **Layer 2（Actions）/ Layer 3（Tests）**：Locator を直接触ってはならない層
+- **Layer 4（Config/Env）**：共通セレクタ（`SELECTORS.MODAL` 等）の正本。Page Object が参照する
+- **Concept（本書の規範）**：Locator の思想・禁止事項（層の外から規定する）
 
-E2E 開発者は第3層の"思想"を理解し、第2層で実践する。
+E2E 開発者は本書の"思想"を理解し、Page Object 層で実践する。
 
 ---
 

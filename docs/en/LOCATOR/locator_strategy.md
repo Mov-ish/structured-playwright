@@ -1,5 +1,5 @@
 # Locator Strategy
-### — 4-Layer Architecture, Layer 3: Locator Design Philosophy / Universal Rules / Product-Specific Rules —
+### — Locator Design Philosophy / Universal Rules / Product-Specific Rules —
 
 This document holds **the complete system of Locator strategy** for Playwright E2E testing.
 It is organized from three perspectives:
@@ -12,9 +12,9 @@ It is organized from three perspectives:
 
 # Part 1: Concept (Design Philosophy)
 
-## 0. The Role of the Concept Layer
+## 0. The Role of Concept
 
-The Locator is a feature of "Layer 1 (Playwright technology)," yet the rules for how it is used are governed by **Layer 3 (Concept / Principles)**.
+The Playwright API defines what you can do with a Locator. It does not define which Locator to write — the same element can be reached many ways. That choice sits outside the API, and it is what **Concept (the canon set out in this document)** governs.
 
 That is because the Locator affects everything:
 
@@ -26,7 +26,7 @@ That is because the Locator affects everything:
 
 It is the "core structure" whose influence reaches all of them.
 
-The Concept layer unifies **not "how to write" but "why to write it that way,"** and in doing so becomes the philosophical center of the 4-layer architecture.
+Concept unifies **not "how to write" but "why to write it that way,"** prescribing from outside the 4-layer architecture which layers may write Locators.
 
 ---
 
@@ -34,7 +34,7 @@ The Concept layer unifies **not "how to write" but "why to write it that way,"**
 
 If you see a Locator as mere "element retrieval," you miss both the depth of the design philosophy and the real strength of Playwright.
 
-At the Concept layer, the definition is this:
+At the Concept level, the definition is this:
 
 ```
 Locator =
@@ -89,18 +89,18 @@ This is one of the most important concepts in Locator design.
 
 ---
 
-## 2. The Purpose of the Concept Layer: Unifying the Philosophy
+## 2. The Purpose of Concept: Unifying the Philosophy
 
-The Concept layer defines not "implementation techniques" but **the philosophy, priorities, and prohibitions of Locator design**.
+Concept defines not "implementation techniques" but **the philosophy, priorities, and prohibitions of Locator design**.
 
 As a result:
 
-- The PageObject layer (Layer 2) stops second-guessing itself
-- Test code (Layer 4) stops writing Locators
+- The Page Object layer (Layer 1) stops second-guessing itself
+- Actions (Layer 2) and Tests (Layer 3) stop writing Locators
 - AI (Codex / Claude) stops generating incorrect Locators
 - Locator quality becomes uniform across the team
 
-The Concept layer serves as the "constitution" of Locators.
+Concept serves as the "constitution" of Locators.
 
 ---
 
@@ -155,11 +155,11 @@ page.locator('button').first().click();
 
 All of these are far too fragile against DOM change.
 
-The Concept layer **rejects structural dependency itself, as a matter of philosophy**.
+Concept **rejects structural dependency itself, as a matter of philosophy**.
 
 ---
 
-## 4. Why Product-Specific Rules Are Integrated into the Concept Layer
+## 4. Why Product-Specific Rules Are Integrated into Concept
 
 A UI with a minimal semantic layer has these structural characteristics:
 
@@ -171,13 +171,13 @@ A UI with a minimal semantic layer has these structural characteristics:
 
 Because of these, applying the universal principles as-is does not yield enough stability.
 
-The Concept layer therefore treats the product-specific rules not as **"exceptions" but as "structural necessities."**
+Concept therefore treats the product-specific rules not as **"exceptions" but as "structural necessities."**
 
 ### 4.1 The Philosophical Position of near()
 
 near() is ordinarily an auxiliary tool, but in a UI that lacks semantic information it functions as a **substitute for meaning**.
 
-The Concept layer prescribes:
+Concept prescribes:
 
 ```
 In a UI lacking semantic information, treat proximity relationships as meaning.
@@ -211,7 +211,7 @@ Rows are adopted as Universes — the UI's units of meaning.
 
 ## 5. The Locator Priority System (Locator Priority Pyramid)
 
-The Concept layer systematizes Locator selection as a **5-level priority pyramid**.
+Concept systematizes Locator selection as a **5-level priority pyramid**.
 
 ```
        ┌──────────────────────────────┐
@@ -300,7 +300,7 @@ Conditions for use:
 
 ## 6. The Locator Philosophy AI Agents Must Follow (for Codex / ChatGPT / Claude)
 
-The Concept layer is also a **rule set that governs the quality of AI output**.
+Concept is also a **rule set that governs the quality of AI output**.
 
 The philosophy an AI must honor:
 
@@ -319,7 +319,7 @@ Why:
 - The worst possible match for a DOM with a minimal semantic layer
 - Easy for AI to generate incorrectly
 
-→ At the Concept layer, "rejection of structural dependency" is non-negotiable.
+→ At the Concept level, "rejection of structural dependency" is non-negotiable.
 
 ### 6.3 Follow the Locator Priority Pyramid
 
@@ -347,21 +347,26 @@ An AI that can articulate its reasons is highly reproducible — and does not mi
 
 ## 7. Connection to the 4-Layer Architecture (Where Concept Sits)
 
-Within the 4-layer architecture, the Concept layer is the **central layer that prescribes the philosophy**.
+Concept is not one of the four layers. It is the **canon that prescribes, from outside the layers, how Locators are written**.
 
 ```
-┌──────────────────────────────┐
-│  Layer 4: Test (Scenario)    │ ← writes no Locators
-├──────────────────────────────┤
-│  Layer 3: Concept (Principles)│ ← Locator philosophy & priorities
-├──────────────────────────────┤
-│  Layer 2: PageObject / Actions│ ← the layer that implements Locators
-├──────────────────────────────┤
-│  Layer 1: Playwright API      │ ← the technical foundation
-└──────────────────────────────┘
+     Concept (the canon in this document)
+     Locator philosophy, priorities, prohibitions
+              │ prescribes
+              ▼
+┌─────────────────────────────────────────────────┐
+│  Layer 3: Tests          writes no Locators     │
+│  Layer 2: Actions        writes no Locators     │
+│  Layer 1: Page Objects   implements Locators    │
+├─────────────────────────────────────────────────┤
+│  Layer 4: Config/Env     holds shared selectors │
+│                          (read by Page Objects) │
+└─────────────────────────────────────────────────┘
 ```
 
-The purpose of a test is **not to operate the UI but to express intent**. Locators are confined to the POM (Layer 2) and excluded from Test (Layer 4).
+Layer 4 is not a rung in the same execution stack as the three above it; it is the **store of values every layer reads**. What concerns Locators is the shared selectors — `SELECTORS.MODAL` and the like — which Page Objects read from here so that the same selector does not scatter across files.
+
+The purpose of a test is **not to operate the UI but to express intent**. Locators are confined to Page Objects (Layer 1) and excluded from Actions (Layer 2) and Tests (Layer 3).
 
 ---
 
@@ -414,7 +419,7 @@ row.locator('button:has(svg[data-icon="edit"])');
 
 ## 9. Concept Summary (the Highest-Level Principles)
 
-The philosophy of the Concept layer condenses into these four points:
+The philosophy of Concept condenses into these four points:
 
 ```
 1. Capture meaning above all else
@@ -773,12 +778,12 @@ it is **prohibited in principle**.
 
 This connects directly to the 4-layer architecture:
 
-- **Layer 1 (Playwright API)**: the technical substance
-- **Layer 2 (PageObject / Actions)**: where Locators are concretely implemented
-- **Layer 3 (Concept)**: the Locator philosophy and its prohibitions
-- **Layer 4 (Test)**: the layer that must never touch Locators directly
+- **Layer 1 (Page Objects)**: where Locators are concretely implemented
+- **Layer 2 (Actions) / Layer 3 (Tests)**: the layers that must never touch Locators directly
+- **Layer 4 (Config/Env)**: the canonical home of shared selectors (`SELECTORS.MODAL` etc.), read by Page Objects
+- **Concept (the canon in this document)**: the Locator philosophy and its prohibitions, prescribed from outside the layers
 
-An E2E developer understands the "philosophy" of Layer 3 and practices it in Layer 2.
+An E2E developer understands the "philosophy" of this document and practices it in the Page Object layer.
 
 ---
 
