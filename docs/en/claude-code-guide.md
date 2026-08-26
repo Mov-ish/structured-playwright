@@ -176,7 +176,7 @@ A checklist like this can be handed over as-is:
 
 | Target | Guidance |
 |------|------|
-| The per-UI-library sub-files of `e2e-locator` (2 for Ant Design) | **Reference examples.** Once you have accumulated field knowledge for your own stack (MUI / Radix / in-house), add a sub-file in the same format and reference it from §9 |
+| The per-UI-library sub-files of `e2e-locator` (3 for Ant Design) | **Reference examples.** Once you have accumulated field knowledge for your own stack (MUI / Radix / in-house), add a sub-file in the same format and reference it from §9 |
 | `auth0-flow.md` | An implementation example for external authentication (Auth0). For a different authentication method, rewrite it using this as a template |
 | Extending `constants.ts` | Add only values used across multiple files (numeric constants require a declaration-line comment — the gate detects this) |
 | Adding to rules | The baseline ratchet fires. The design makes you ask "if I add this, what do I delete?" (do not put code examples in rules — put them in skills; the gate detects this too) |
