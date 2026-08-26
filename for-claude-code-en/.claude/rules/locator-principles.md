@@ -23,7 +23,7 @@ Capture elements by meaning (role, name, label, text), not structure (nested div
 → CSS structural selectors and XPath are prohibited as a rule.
 
 **2. Narrow the search scope**
-The whole page is too large a search range. Scoping to a semantic unit — modal, row, card, etc. — improves uniqueness, resilience to DOM changes, and clarity of intent. This is what Playwright's own docs call scoping / locator chaining.
+The whole page is too large a search range. Scoping to a semantic unit — modal, row, card, etc. — improves uniqueness, resilience to DOM changes, and clarity of intent. Playwright's own docs cover this under "Matching inside a locator" — chaining locators to narrow the search.
 → Prefer `modal.locator()` or `row.locator()` over unscoped `page.locator()`.
 
 ## The 4 Universal Principles — What Each Prevents
@@ -31,7 +31,7 @@ The whole page is too large a search range. Scoping to a semantic unit — modal
 | Principle | What it prevents |
 |------|---------|
 | **Capture meaning (Semantic Priority)** | Locator collapse on UI changes. Meaning is the layer least likely to change |
-| **Limit where you look (Search Scope)** | Mis-hits on identical text. The case where "Save" exists twice: in the background and in a modal |
+| **Narrow the search scope (Search Scope)** | Mis-hits on identical text. The case where "Save" exists twice: in the background and in a modal |
 | **Eliminate coincidence (Deterministic)** | Sudden breakage from ordinal selectors (`.first()`/`.last()`/`.nth()`) when the UI is reordered or elements are added |
 | **Do not depend on structure (Anti-XPath)** | All Locators collapsing just because the UI library added one div |
 
