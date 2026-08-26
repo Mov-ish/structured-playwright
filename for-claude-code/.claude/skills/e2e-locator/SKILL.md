@@ -185,10 +185,10 @@ await page.locator('.ant-select-item-option')   // ライブラリ固有クラ�
   .filter({ hasText: targetName }).first().click();
 ```
 
-→ 詳細（2層構造の背景・検索が必要な場合・省略表示の注意・ライブラリ別クラス表）は [ant-design-select.md](./ant-design-select.md) 参照
+→ 詳細（2層構造の背景・検索が必要な場合・省略表示の注意・ライブラリ別クラス表）は [e2e-locator/ant-design-select.md](./ant-design-select.md) 参照
 
 **⚠️ 中身が空のタブが `aria-disabled` でクリック不可になる罠**: Ant Design Tabs / MUI Tabs / Radix UI Tabs などはタブの中身がゼロのとき `aria-disabled="true"` を付与する。これを知らずに `tab.click()` を呼ぶと Playwright の `click()` が actionable 待ちで **test timeout までハング**し、最悪のフィードバックループになる（数分後に Fail、原因切り分け困難）。
-→ 詳細は [ant-design-tabs-disabled.md](./ant-design-tabs-disabled.md) 参照
+→ 詳細は [e2e-locator/ant-design-tabs-disabled.md](./ant-design-tabs-disabled.md) 参照
 
 ```typescript
 // ❌ 空タブで test timeout まで永久ハング
