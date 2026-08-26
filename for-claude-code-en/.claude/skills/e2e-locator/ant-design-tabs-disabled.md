@@ -95,4 +95,4 @@ Playwright's `isEnabled()` interprets all of them, so the same guard pattern han
 ## Related Topics
 
 - `prohibited-patterns.md`, "False positives in the form of hangs": prohibited under the same philosophy.
-- `locator-principles.md` §1 "Future value": `isEnabled()` itself evaluates immediately, which is OK, but inserting a visibility `waitFor({state:'visible'})` first is safer (wait until the element becomes obtainable as a Future value, then judge).
+- `locator-principles.md` "The Essence of Locators" — Future value: `isEnabled()` itself evaluates immediately, which is OK, but inserting a visibility `waitFor({state:'visible'})` first is safer (wait until the element becomes obtainable as a Future value, then judge).

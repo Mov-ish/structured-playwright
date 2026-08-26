@@ -6,7 +6,7 @@ Import `test`/`expect` via `fixtures/app.fixture`, not from `@playwright/test`. 
 
 ## Minimum Required Structure of Constants
 
-**Canonical source of the template = `e2e-bootstrap` §4** (the complete form of TIMEOUTS / SELECTORS / URL_PATTERNS that must be included at environment setup + project-specific extension examples. A declaration-line comment is required for numeric constants — the gate detects this mechanically). The rules hold no code. `SELECTORS.MODAL` is the universe constant scoped to a single modal (no `.last()` — see "When to Use Which" below).
+**Canonical source of the template = `e2e-bootstrap` §4** (the complete form of TIMEOUTS / SELECTORS / URL_PATTERNS that must be included at environment setup + project-specific extension examples. A declaration-line comment is required for numeric constants — the gate detects this mechanically). The rules hold no code. `SELECTORS.MODAL` is the constant scoped to a single modal (no `.last()` — see "When to Use Which" below).
 
 ## What Goes Into constants.ts / What Does Not
 

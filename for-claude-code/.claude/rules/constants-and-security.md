@@ -6,7 +6,7 @@
 
 ## 定数の最小必須構造
 
-**雛形の正本 = `e2e-bootstrap` §4**（環境構築時に必ず含める TIMEOUTS / SELECTORS / URL_PATTERNS の完全形 + プロジェクト固有の拡張例。数値定数の宣言行コメント必須 — gate が機械検出）。rules はコードを持たない。`SELECTORS.MODAL` は単一モーダルにスコープする宇宙定数（`.last()` なし — 下記「使い分け」参照）。
+**雛形の正本 = `e2e-bootstrap` §4**（環境構築時に必ず含める TIMEOUTS / SELECTORS / URL_PATTERNS の完全形 + プロジェクト固有の拡張例。数値定数の宣言行コメント必須 — gate が機械検出）。rules はコードを持たない。`SELECTORS.MODAL` は単一モーダルにスコープする定数（`.last()` なし — 下記「使い分け」参照）。
 
 ## constants.ts に入れるもの / 入れないもの
 

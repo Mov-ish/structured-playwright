@@ -56,7 +56,7 @@ export const TIMEOUTS = {
 } as const;
 
 export const SELECTORS = {
-  MODAL: '[role="dialog"]',          // 単一モーダルにスコープする宇宙定数（.last() なし）
+  MODAL: '[role="dialog"]',          // 単一モーダルにスコープする定数（.last() なし）
   SUBMIT_BUTTON: 'button[type="submit"]',
 } as const;
 

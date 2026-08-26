@@ -12,19 +12,18 @@ Therefore:
   cannot occur in principle with Playwright Locators.
 - Whether to store it in a variable is a judgment about **DRY / readability / preventing missed updates during maintenance**,
   not about avoiding "the risk of grabbing a different element after a DOM re-render."
+- In a word, a Locator is a **Future value**. It does not require the element to exist in the DOM right now;
+  it holds a "condition that will hold in the future," with lazy evaluation, auto-waiting, and auto-retry built in.
+  → `waitFor()` (future-value evaluation) is often more appropriate than `isVisible()` (immediate evaluation).
 
-The three principles below are the philosophy for designing Locators on top of this premise.
+The two principles below are the philosophy for designing Locators on top of this premise.
 
-**1. A Locator is a Future value**
-A Locator does not require the element to exist in the DOM right now. It is a "condition that will hold in the future," with lazy evaluation, auto-waiting, and auto-retry built in.
-→ `waitFor()` (future-value evaluation) is often more appropriate than `isVisible()` (immediate evaluation).
-
-**2. It should be operated in the semantic space**
+**1. It should be operated on a semantic basis**
 Capture elements by meaning (role, name, label, text), not structure (nested divs). The meaning of a UI rarely changes, but its structure changes frequently.
 → CSS structural selectors and XPath are prohibited as a rule.
 
-**3. Search within a Local Universe**
-The whole page is too large as a search space. Scoping to a semantic unit — modal, row, card, etc. — improves uniqueness, resilience to DOM changes, and clarity of intent.
+**2. Narrow the search scope**
+The whole page is too large a search range. Scoping to a semantic unit — modal, row, card, etc. — improves uniqueness, resilience to DOM changes, and clarity of intent. Playwright's own docs cover this under "Matching inside a locator" — chaining locators to narrow the search.
 → Prefer `modal.locator()` or `row.locator()` over unscoped `page.locator()`.
 
 ## The 4 Universal Principles — What Each Prevents
@@ -32,7 +31,7 @@ The whole page is too large as a search space. Scoping to a semantic unit — mo
 | Principle | What it prevents |
 |------|---------|
 | **Capture meaning (Semantic Priority)** | Locator collapse on UI changes. Meaning is the layer least likely to change |
-| **Limit the universe (Local Universe)** | Mis-hits on identical text. The case where "Save" exists twice: in the background and in a modal |
+| **Narrow the search scope (Search Scope)** | Mis-hits on identical text. The case where "Save" exists twice: in the background and in a modal |
 | **Eliminate coincidence (Deterministic)** | Sudden breakage from ordinal selectors (`.first()`/`.last()`/`.nth()`) when the UI is reordered or elements are added |
 | **Do not depend on structure (Anti-XPath)** | All Locators collapsing just because the UI library added one div |
 
@@ -40,7 +39,7 @@ The whole page is too large as a search space. Scoping to a semantic unit — mo
 
 ```
   1. Semantic                      getByRole / getByLabel / text-is
-  2. Local Universe                dialog / row / card / section
+  2. Search scope                  dialog / row / card / section
   3. Proximity (near)              :near(:text("..."))
   4. data attributes (UI library)  data-testid / data-icon etc.
   5. Last resort: structural       comment + TODO required
@@ -86,7 +85,7 @@ The root cause is that **the structural layer fluctuates wildly**: the UI librar
 | `near()` as the main weapon | The element itself has no identifier. Nearby text is the only stable anchor |
 | Confine modals with `role="dialog"` | Class names are meaningless. role is the only semantic anchor |
 | `svg[data-icon]` as the icon anchor | No text, no aria-label. data-icon is the only stable thing |
-| Rows as the Universe | Tables are one of the few semantic units in a semantically thin UI |
+| Rows as the search scope | Tables are one of the few semantic units in a semantically thin UI |
 
 | Priority | Method | UIs with a minimal semantic layer |
 |--------|------|--------|
@@ -103,11 +102,11 @@ The root cause is that **the structural layer fluctuates wildly**: the UI librar
 1. Does `data-testid` exist? → if so, use it as the top priority
 2. What is the state of `aria-label` / `label` coverage? → decide fallback strategies for the gaps
 3. Which UI library is used? → identify the library's own stable attributes
-4. How much duplication of identical UI text is there? → decide the Local Universe design policy
+4. How much duplication of identical UI text is there? → decide the search-scope design policy
 
 ## Code of Conduct for AI Generation
 
-1. **Do not casually propose ordinal selectors (`.first()` / `.last()` / `.nth()`)** — first try to solve with `:near()` / Local Universe / specific selectors. When an ordinal is needed, distinguish between "freezing a coincidence (a stopgap)" and "encoding a framework invariant," and attach a reason comment in either case (the former also requires a TODO)
+1. **Do not casually propose ordinal selectors (`.first()` / `.last()` / `.nth()`)** — first try to solve with `:near()` / search scope / specific selectors. When an ordinal is needed, distinguish between "freezing a coincidence (a stopgap)" and "encoding a framework invariant," and attach a reason comment in either case (the former also requires a TODO)
 2. **Never propose XPath** — the rejection of structure dependence is a principle at the level of philosophy
 3. **Follow the priority pyramid step by step** — confirm that upper levels cannot solve it before moving down. Do not jump straight to structural selectors
 4. **Attach a comment explaining the selection rationale to every Locator** — e.g., `// No role set and text is duplicated, so identified via near()`
@@ -116,6 +115,6 @@ The root cause is that **the structural layer fluctuates wildly**: the UI librar
 
 1. Try the decision flowchart
 2. It does not apply → **return to the 4 principles**
-3. Ask in order: "What is the meaning?" "What is the Universe?" "Is it unique?"
+3. Ask in order: "What is the meaning?" "What is the scope?" "Is it unique?"
 4. Still impossible → structure-dependent (comment + TODO required)
 5. **Before inventing a new pattern yourself, ask the human for confirmation**
