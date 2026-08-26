@@ -23,7 +23,7 @@ Locator は CSS query (関数) を保持しているだけで element reference 
 → CSS構造セレクタやXPathは原則禁止。
 
 **2. 探索スコープを絞る**
-ページ全体は探索範囲として大きすぎる。モーダル・行・カード等の意味単位で括ると、一意性向上・DOM変更に強い・意図が明確。Playwright 公式の scoping / locator chaining がこれにあたる。
+ページ全体は探索範囲として大きすぎる。モーダル・行・カード等の意味単位で括ると、一意性向上・DOM変更に強い・意図が明確。Playwright 公式ドキュメントの "Matching inside a locator"（Locator を連鎖させて探索範囲を絞る）がこれにあたる。
 → スコープなし`page.locator()`より`modal.locator()`や`row.locator()`。
 
 ## 4つの普遍原則 — 各原則が防ぐもの
