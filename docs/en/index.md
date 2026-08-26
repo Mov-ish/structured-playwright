@@ -23,7 +23,7 @@ The canonical source for the concrete standards (prohibited patterns, templates,
 ## Design philosophy (reading that stays true even as the implementation changes)
 
 - [`E2ETest_Framework.md`](./E2ETest_Framework.md) — **the design philosophy of the 4-layer architecture**. Why the layers are separated, why the boundaries are absolute, and the fight against false positives
-- [`LOCATOR/locator_strategy.md`](./LOCATOR/locator_strategy.md) — **Locator Strategy**. The conceptual system of "a Locator is a future value," "operate in semantic space," and "explore in a local universe," plus the priority pyramid
+- [`LOCATOR/locator_strategy.md`](./LOCATOR/locator_strategy.md) — **Locator Strategy**. The conceptual system of "a Locator is a future value," "operate on a semantic basis," and "narrow the search scope," plus the priority pyramid
 
 ## Articles
 

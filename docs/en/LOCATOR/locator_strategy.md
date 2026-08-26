@@ -39,7 +39,8 @@ At the Concept level, the definition is this:
 ```
 Locator =
    "a probe carrying a set of conditions"
- × "explores within a Local Universe"
+ × "points by meaning"
+ × "narrows the search scope"
  × "evaluated as a future value"
 ```
 
@@ -53,7 +54,7 @@ A Locator does not require the element to exist in the DOM right now.
 
 With these built in, a Locator is "a conditional expression satisfied in the future" — and that is the fundamental reason it stands up to dynamic UI.
 
-### 1.2 A Locator Should Be Operated in "Semantic Space"
+### 1.2 A Locator Should Be Operated on a "Semantic Basis"
 
 The semantic Locators Playwright recommends explore elements by **meaning (semantics)**, not by structure.
 
@@ -64,13 +65,13 @@ The semantic Locators Playwright recommends explore elements by **meaning (seman
 
 Grasping the UI through meaning rather than through structure (nested divs) is what leads to stable, readable tests.
 
-### 1.3 A Locator Has a "Universe"
+### 1.3 A Locator Has a "Search Scope"
 
 The whole page is too large a place to search.
 
-Playwright's philosophy is close to a single instruction: **explore within a Local Universe.**
+Playwright's philosophy is close to a single instruction: **explore within a search scope.**
 
-Examples of a Local Universe:
+Examples of a search scope:
 
 - A modal
 - A row
@@ -122,7 +123,7 @@ Why:
 - The intent of the test code stays readable
 - It pairs well with AI auto-generation
 
-### 3.2 Limit the Universe (Local Universe)
+### 3.2 Narrow the Search Scope
 
 Example:
 
@@ -188,7 +189,7 @@ In a UI lacking semantic information, treat proximity relationships as meaning.
 In a product where modals and background UI readily coexist, the only semantic anchor is the role attribute.
 
 ```
-The modal's Universe is defined with role="dialog" as its base point.
+The modal's search scope is defined with role="dialog" as its base point.
 ```
 
 ### 4.3 The Philosophical Position of svg[data-icon]
@@ -199,12 +200,12 @@ Because the UI library assigns icons a stable `data-icon`, an icon carries a **s
 For identifying icons, data-icon is the essential anchor.
 ```
 
-### 4.4 Why the Row Is Adopted as a Universe
+### 4.4 Why the Row Is Adopted as a Search Scope
 
 The table is one of the few "units of meaning" in a UI with a minimal semantic layer.
 
 ```
-Rows are adopted as Universes — the UI's units of meaning.
+Rows are adopted as search scopes — the UI's units of meaning.
 ```
 
 ---
@@ -218,7 +219,7 @@ Concept systematizes Locator selection as a **5-level priority pyramid**.
        │   1. Semantic-Based               │
        │   role / label / name / text-is   │
        ├──────────────────────────────┤
-       │   2. Local Universe               │
+       │   2. Search scope                 │
        │   dialog / row / card / section   │
        ├──────────────────────────────┤
        │   3. Meaning Complement via near()│
@@ -247,7 +248,7 @@ Why:
 - The intent is clear to a human reader
 - AI can grasp the purpose correctly
 
-### 5.2 Level 2: Local Universe (Confine by Unit of Meaning)
+### 5.2 Level 2: Search Scope (Confine by Unit of Meaning)
 
 Example:
 
@@ -326,7 +327,7 @@ Why:
 When an AI generates a Locator, it checks, in order:
 
 1. **Semantic-based**
-2. **Local Universe**
+2. **Search scope**
 3. **near()**
 4. **data-icon**
 5. **Structure-dependent (last resort)**
@@ -339,7 +340,7 @@ Good AI output always states its reasons.
 
 Example:
 
-> "This UI has no role and its text is duplicated, so I used the row as the Universe and the data-icon inside it as the anchor."
+> "This UI has no role and its text is duplicated, so I used the row as the search scope and the data-icon inside it as the anchor."
 
 An AI that can articulate its reasons is highly reproducible — and does not mis-hit.
 
@@ -379,7 +380,7 @@ Concept is not code itself; it is a **thinking model that guides implementation*
 Following the Concept:
 
 1. Meaning → role + name (exact match)
-2. Universe → dialog
+2. Scope → dialog
 3. Uniqueness → OK
 4. Proximity complement → not needed
 
@@ -392,7 +393,7 @@ modal.getByRole('button', { name: 'Save', exact: true });
 ### 8.2 "I Want to Check a Checkbox"
 
 1. Meaning → none
-2. Universe → none
+2. Scope → none
 3. Proximity → yes
 4. Icon → no
 
@@ -405,7 +406,7 @@ page.locator('input[type="checkbox"]:near(:text("Privacy Policy"))');
 ### 8.3 "I Want to Press the Edit Icon"
 
 1. Meaning → none
-2. Universe → row
+2. Scope → row
 3. near → not needed
 4. Icon → yes
 
@@ -423,7 +424,7 @@ The philosophy of Concept condenses into these four points:
 
 ```
 1. Capture meaning above all else
-2. Decompose the UI into small universes (Universe)
+2. Decompose the UI into search scopes
 3. Select elements by intent, not by coincidence
 4. Eliminate structural dependency and design Locators that withstand churn
 ```
@@ -526,7 +527,7 @@ Every one of the following UI elements could match:
 
 Partial matching amplifies ambiguity, so the decision to use it must be made carefully.
 
-That said, partial matching also has a legitimate day job: **bracketing**. When `tr:has-text("...")` turns a row into a Local Universe, an exact match against the row's entire text is impossible in principle, so partial matching is the right tool. Distinguish **leaf targeting** (dangerous — be careful) from **bracketing** (its true home).
+That said, partial matching also has a legitimate day job: **bracketing**. When `tr:has-text("...")` turns a row into a search scope, an exact match against the row's entire text is impossible in principle, so partial matching is the right tool. Distinguish **leaf targeting** (dangerous — be careful) from **bracketing** (its true home).
 
 ### 4.3 When the Label and the DOM Text Diverge — UI Library Interference
 
@@ -571,9 +572,9 @@ Playwright's whitespace normalization only collapses runs of whitespace into one
 
 ---
 
-## 5. Parent-Container Anchoring (the Local Universe Concept)
+## 5. Parent-Container Anchoring (the Search Scope Concept)
 
-A Locator becomes stable when it is used inside a "Local Universe."
+A Locator becomes stable when it is used inside a "search scope."
 
 Example: search only within a modal.
 
@@ -582,14 +583,14 @@ const modal = page.locator('[role="dialog"]');
 modal.getByRole('button', { name: 'Save', exact: true }).click();
 ```
 
-### 5.1 Why the Local Universe Matters
+### 5.1 Why the Search Scope Matters
 
 - Searching the entire DOM multiplies the match candidates
 - The Locator becomes resilient to UI churn
 - Performance improves
 - The test's intent becomes clearer
 
-### 5.2 Representative Local Universes
+### 5.2 Representative Search Scopes
 
 - Modals
 - Cards
@@ -597,7 +598,7 @@ modal.getByRole('button', { name: 'Save', exact: true }).click();
 - Tab panels
 - Settings sections
 
-Carving the UI into "universes" raises uniqueness and stability at the same time.
+Carving the UI into "scopes" raises uniqueness and stability at the same time.
 
 ---
 
@@ -666,7 +667,7 @@ async clickUser(name: string) {
 
 With the responsibilities separated:
 
-- The "semantic space" of the selectors stays organized
+- The meaning behind the selectors stays organized
 - The PageObject manages "operations, conditions, and dynamic values"
 - The blast radius of any change is clear
 
@@ -796,7 +797,7 @@ modal.getByRole('button', { name: 'Save', exact: true });
 ```
 
 - The text pins down the meaning
-- The modal, as a Local Universe, bounds the range
+- The modal, as a search scope, bounds the range
 → One of the hardest patterns to break.
 
 ### 12.2 Confine to role="dialog" (Modals)
@@ -846,7 +847,7 @@ Check the following at implementation time and at review time:
 
 - ☑ Is uniqueness secured?
 - ☑ Could this be expressed with an exact semantic match (role + name + exact / text-is)?
-- ☑ Has a parent container (Local Universe) been set?
+- ☑ Has a parent container (search scope) been set?
 - ☑ Are semantic Locators given priority?
 - ☑ Was a real effort made to avoid `.first()`?
 - ☑ Are dynamic values placed in the PageObject layer?
@@ -861,7 +862,7 @@ The universal principles of the Playwright Locator condense into four pillars:
 
 ```text
 1. Capture meaning (role + name + exact / text-is)
-2. Limit the universe (scope / Local Universe)
+2. Narrow the search scope
 3. Eliminate coincidence (secure uniqueness)
 4. Do not depend on structure (anti-XPath)
 ```
@@ -950,7 +951,7 @@ Because the UI's text is duplicated:
 - An exact match alone cannot achieve uniqueness
 - partial text matching mis-hits easily
 
-→ **This is the background that makes the Local Universe (parent container) and near() indispensable.**
+→ **This is the background that makes the search scope (parent container) and near() indispensable.**
 
 ### 1.5 Modal Class Names Carry No Meaning; the Only Reliable Anchor Is `role="dialog"`
 
@@ -996,7 +997,7 @@ What is needed, therefore:
 
 - Anchor on the UI's "meaning" (text)
 - Compensate for missing meaning with proximity (near)
-- Narrow the search with a Local Universe
+- Narrow the search with a search scope
 - Exploit the icon structure (data-icon)
 - Pin down modals with role
 
@@ -1066,7 +1067,7 @@ await modal.getByRole('button', { name: 'Save', exact: true }).click();
 Benefits:
 
 - No accidental click on the background's "Save" button
-- The modal's interior can be treated as a Local Universe
+- The modal's interior can be treated as a search scope
 - Resilient to DOM structural change
 
 ### 2.3 Anchor Icon Buttons on svg[data-icon]
@@ -1134,11 +1135,11 @@ const row = page.locator('tr:has-text("Intro to TypeScript")');
 row.locator('button:has(svg[data-icon="edit"])').click();
 ```
 
-→ The row becomes a "meaningful Local Universe."
+→ The row becomes a "meaningful search scope."
 
-#### Use the Local Universe Aggressively
+#### Use the Search Scope Aggressively
 
-Because UI with a minimal semantic layer is everywhere, carving out universes along "units of meaning" is critically important.
+Because UI with a minimal semantic layer is everywhere, carving out scopes along "units of meaning" is critically important.
 
 Examples:
 
@@ -1199,7 +1200,7 @@ page.locator('button:has-text("Save")');
 - The same text appears in the modal and in the background
 - Partial matching mis-hits easily
 
-→ **An exact match (role + name + exact / text-is) + scope (Local Universe) is mandatory.**
+→ **An exact match (role + name + exact / text-is) + scope (search scope) is mandatory.**
 
 ### 3.3 Searching for a Modal Across the Whole Page
 
@@ -1212,7 +1213,7 @@ page.getByRole('button', { name: 'Save', exact: true }).click();
 - The run log looks like a success, but the wrong UI was operated
 - Much of what looks like buggy behavior is really a "Locator mis-hit"
 
-→ **The product-specific rules always use the role="dialog" Local Universe.**
+→ **The product-specific rules always use the role="dialog" search scope.**
 
 ### 3.4 Using `.first()`
 
@@ -1242,9 +1243,9 @@ modal.getByRole('button', { name: 'Save', exact: true }).click();
 ```
 
 → Completely prevents mis-hits against the background UI.
-→ The modal's interior "micro-universe (Local Universe)" gives the highest stability.
+→ The modal's interior, as a search scope, gives the highest stability.
 
-### 4.2 Use the Row as the Universe and Operate the Icons Inside It
+### 4.2 Use the Row as the Search Scope and Operate the Icons Inside It
 
 ```ts
 const row = page.locator('tr:has-text("Intro to TypeScript")');
@@ -1270,7 +1271,7 @@ row.locator('button:has(svg[data-icon="delete"])');
 → Class names and text are of no use here,
 → so **data-icon is the one stable anchor.**
 
-### 4.5 Active Adoption of the Local Universe
+### 4.5 Active Adoption of the Search Scope
 
 - Cards
 - Tab content
@@ -1297,7 +1298,7 @@ Bracketing the UI along units of meaning is the greatest defense this kind of pr
 ☑ No dependency on the icon's text or class?
 
 ### Row + Internal Elements
-☑ Is the row treated as a Local Universe?
+☑ Is the row treated as a search scope?
 ☑ Are operations on elements inside the row clearly anchored?
 
 ### Text
@@ -1319,8 +1320,8 @@ The five pillars:
 1. near() (compensating for missing meaning)
 2. role="dialog" (the only stable modal anchor)
 3. svg[data-icon] (the icon anchor the UI library guarantees)
-4. Local Universe (searching by unit of meaning)
-5. Row anchor (the row as a universe)
+4. Search scope (searching by unit of meaning)
+5. Row anchor (the row as a search scope)
 ```
 
 Follow these and the hybrid of "universal rules + product-specific rules" holds together, realizing **extremely stable Locator design**.

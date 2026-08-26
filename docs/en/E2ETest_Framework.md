@@ -39,7 +39,7 @@ A Page Object is a dictionary that defines "this element on this screen carries 
 
 What a Page Object may hold goes only as far as element definitions, basic operations on a single element, and observation of state. **It must not know the business context.** "Click the search button" is fine to write, but knowing "find a product and buy it" is the job of a higher layer. When a dictionary starts telling stories, every UI change breaks the story along with it.
 
-Locator design has its own independent body of philosophy (see [Locator Strategy](./LOCATOR/locator_strategy.md)). In brief: a Locator is a "conditional expression satisfied in the future"; write it by meaning rather than structure, and localize the search space.
+Locator design has its own independent body of philosophy (see [Locator Strategy](./LOCATOR/locator_strategy.md)). In brief: a Locator is a "conditional expression satisfied in the future"; write it by meaning rather than structure, and narrow the search scope.
 
 ### Layer 2: Actions — the "Verbs" of the User Story
 
