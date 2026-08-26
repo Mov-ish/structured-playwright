@@ -40,8 +40,8 @@ Locator は CSS query (関数) を保持しているだけで element reference 
 ```
   1. 意味ベース（Semantic）       getByRole / getByLabel / text-is
   2. 探索スコープ（Search Scope） dialog / row / card / section
-  3. 近接（near）による意味補完    :near(:text("..."))
-  4. data属性（UIライブラリ補完）  data-testid / data-icon 等
+  3. 近接（near）による意味補完   :near(:text("..."))
+  4. data属性（UIライブラリ補完） data-testid / data-icon 等
   5. 最終手段：構造依存           コメント + TODO 必須
 ```
 
