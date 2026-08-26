@@ -23,7 +23,7 @@ English version: [`docs/en/`](../en/index.md)
 ## 設計思想（実装が変わっても真であり続ける読み物）
 
 - [`E2ETest_Framework.md`](./E2ETest_Framework.md) — **4 層アーキテクチャの設計思想**。なぜ層を分けるのか・境界はなぜ絶対か・偽陽性との戦い
-- [`LOCATOR/locator_strategy.md`](./LOCATOR/locator_strategy.md) — **Locator Strategy**。Locator は未来値である・意味空間で操作する・局所宇宙で探索する、という思想体系と優先順位ピラミッド
+- [`LOCATOR/locator_strategy.md`](./LOCATOR/locator_strategy.md) — **Locator Strategy**。Locator は未来値である・意味ベースで操作する・探索スコープを絞る、という思想体系と優先順位ピラミッド
 
 ## 解説記事
 

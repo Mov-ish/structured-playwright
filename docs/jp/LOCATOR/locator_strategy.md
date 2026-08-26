@@ -42,9 +42,9 @@ Concept での定義はこうなる：
 
 ```
 Locator =
-   "条件セットを持つ探査機（probe）"
- × "局所宇宙（Local Universe）で探索する"
- × "未来値として評価される"
+   "未来値として評価される"
+ × "意味ベースで指す"
+ × "探索スコープを絞る"
 ```
 
 ### 1.1 Locator は「未来値（Future）」である
@@ -58,7 +58,7 @@ Locator は今 DOM に要素が存在しなくてもよい。
 これらを内包する「未来に成立する条件式」であり、
 動的 UI に強い根本理由がここにある。
 
-### 1.2 Locator は「意味空間」で操作されるべき
+### 1.2 Locator は「意味ベース」で操作されるべき
 
 Playwright が推奨するセマンティック Locator は、
 構造ではなく **意味（Semantics）** に基づいて要素を探索する。
@@ -71,13 +71,13 @@ Playwright が推奨するセマンティック Locator は、
 UI を構造（div の入れ子）ではなく意味によって捉えることが、
 テストの安定性と可読性につながる。
 
-### 1.3 Locator は「宇宙（Universe）」を持つ
+### 1.3 Locator は「探索スコープ」を持つ
 
 ページ全体は大きすぎる。
 
-Playwright の哲学に近いのは **「局所宇宙（Local Universe）で探索せよ」** の思想。
+Playwright の哲学に近いのは **「探索スコープ（Search Scope）で探索せよ」** の思想。
 
-Local Universe の例：
+探索スコープの例：
 
 - モーダル
 - 行（row）
@@ -130,7 +130,7 @@ role / label / name / text-is
 - テストコードの意図が読み取りやすい
 - AI の自動生成と相性が良い
 
-### 3.2 宇宙を限定する（Local Universe）
+### 3.2 探索スコープを絞る（Search Scope）
 
 例：
 
@@ -199,7 +199,7 @@ Concept では次のように規定する：
 唯一のセマンティック anchor は role 属性。
 
 ```
-モーダルの Universe は role="dialog" を基点に定義する。
+モーダルの 探索スコープは role="dialog" を基点に定義する。
 ```
 
 ### 4.3 svg[data-icon] の哲学的位置づけ
@@ -211,12 +211,12 @@ UI ライブラリが icon に安定した data-icon を付与するため、
 アイコンの識別は data-icon が本質 anchor。
 ```
 
-### 4.4 row（行）を Universe とする理由
+### 4.4 row（行）を 探索スコープとする理由
 
 表（table）は意味層の薄い UI における数少ない「意味単位」。
 
 ```
-行は UI の意味単位として Universe に採用する。
+行は UI の意味単位として 探索スコープに採用する。
 ```
 
 ---
@@ -230,7 +230,7 @@ Concept では、Locator の選択を **5 段階の優先順位ピラミッド**
        │   1. 意味ベース（Semantic）        │
        │   role / label / name / text-is │
        ├──────────────────────────────┤
-       │   2. 局所宇宙（Local Universe）     │
+       │   2. 探索スコープ（Search Scope）    │
        │   dialog / row / card / section │
        ├──────────────────────────────┤
        │   3. 近接（near）による意味補完     │
@@ -259,7 +259,7 @@ page.getByLabel('メールアドレス');
 - 人間にとって意図が明確
 - AI も正しく目的を把握できる
 
-### 5.2 レベル 2：Local Universe（意味単位で閉じ込める）
+### 5.2 レベル 2：探索スコープ（意味単位で閉じ込める）
 
 例：
 
@@ -340,7 +340,7 @@ AI が必ず守るべき思想：
 AI が Locator を生成する際は：
 
 1. **意味ベース**
-2. **局所宇宙**
+2. **探索スコープ**
 3. **near()**
 4. **data-icon**
 5. **構造依存（最終手段）**
@@ -353,7 +353,7 @@ AI が Locator を生成する際は：
 
 例：
 
-> "この UI は role が無く文言が重複するため、row を Universe とし、中の data-icon を anchor にしています。"
+> "この UI は role が無く文言が重複するため、row を 探索スコープとし、中の data-icon を anchor にしています。"
 
 理由を語れる AI は再現性が高く、誤爆しない。
 
@@ -398,7 +398,7 @@ Concept はコードそのものではなく、
 Concept に従う：
 
 1. 意味 → role + name（完全一致）
-2. Universe → dialog
+2. 探索スコープ → dialog
 3. 一意性 → OK
 4. 近接補完 → 不要
 
@@ -411,7 +411,7 @@ modal.getByRole('button', { name: '保存', exact: true });
 ### 8.2 「チェックボックスをチェックしたい」
 
 1. 意味 → 無い
-2. Universe → 無い
+2. 探索スコープ → 無い
 3. 近接 → Yes
 4. icon → No
 
@@ -424,7 +424,7 @@ page.locator('input[type="checkbox"]:near(:text("プライバシーポリシー"
 ### 8.3 「編集アイコンを押したい」
 
 1. 意味 → 無い
-2. Universe → row
+2. 探索スコープ → row
 3. near → 不要
 4. icon → Yes
 
@@ -442,7 +442,7 @@ Concept の思想は次の 4 点で集約される：
 
 ```
 1. 意味を最優先で捉える
-2. UI を小宇宙（Universe）に分解する
+2. UI を探索スコープに分解する
 3. 偶然ではなく意図で要素を選択する
 4. 構造依存を排除し、揺れに強い Locator を設計する
 ```
@@ -550,7 +550,7 @@ button:has-text("保存")
 
 部分一致は「曖昧性」を増幅するため、使用判断は慎重にする。
 
-なお部分一致には「括り」という本業もある：`tr:has-text("...")` で行を局所宇宙にする用途では、行全体のテキストとの完全一致が原理的に不可能なため、部分一致が正当な道具になる。**葉の特定**（危険・慎重に）と**括り**（本命）を区別する。
+なお部分一致には「括り」という本業もある：`tr:has-text("...")` で行を探索スコープにする用途では、行全体のテキストとの完全一致が原理的に不可能なため、部分一致が正当な道具になる。**葉の特定**（危険・慎重に）と**括り**（本命）を区別する。
 
 ### 4.3 ラベルと DOM テキストの乖離 ― UI ライブラリの介入
 
@@ -595,9 +595,9 @@ Playwright の空白正規化は「連続空白を 1 個に畳む」処理であ
 
 ---
 
-## 5. 親コンテナ anchoring（Local Universe の概念）
+## 5. 親コンテナ anchoring（探索スコープの概念）
 
-Locator は「局所宇宙（Local Universe）」で使うと安定する。
+Locator は「探索スコープ（Search Scope）」で使うと安定する。
 
 例：モーダル内だけを探索する
 
@@ -606,14 +606,14 @@ const modal = page.locator('[role="dialog"]');
 modal.getByRole('button', { name: '保存', exact: true }).click();
 ```
 
-### 5.1 なぜ Local Universe が重要なのか？
+### 5.1 なぜ 探索スコープが重要なのか？
 
 - DOM 全体を探索すると一致候補が増える
 - UI の揺れに強くなる
 - パフォーマンスが向上
 - テストの意図が明確になる
 
-### 5.2 Local Universe の代表例
+### 5.2 探索スコープの代表例
 
 - モーダル
 - カード
@@ -621,7 +621,7 @@ modal.getByRole('button', { name: '保存', exact: true }).click();
 - タブパネル
 - 設定セクション
 
-UI を「宇宙」として区切ることで、一意性と安定性が同時に高まる。
+UI を「探索スコープ」として区切ることで、一意性と安定性が同時に高まる。
 
 ---
 
@@ -693,7 +693,7 @@ async clickUser(name: string) {
 
 責務分離により：
 
-- セレクタの "意味空間" が整理される
+- セレクタの意味づけが整理される
 - PageObject が "操作・条件・動的値" を管理できる
 - 変更時の影響範囲が明確になる
 
@@ -830,7 +830,7 @@ modal.getByRole('button', { name: '保存', exact: true });
 ```
 
 - 文言で意味を確定
-- モーダルという局所宇宙で範囲を限定
+- モーダルという探索スコープで範囲を限定
 → 最も壊れにくいパターンのひとつ。
 
 ### 12.2 role="dialog" に閉じ込める（モーダル）
@@ -882,7 +882,7 @@ Locator 定義（静的）と動的値の適用（POM）を分離することで
 
 - ☑ 一意性は確保されているか？
 - ☑ 意味の完全一致（role + name + exact / text-is）で表現できないか？
-- ☑ 親コンテナ（Local Universe）を設定したか？
+- ☑ 親コンテナ（探索スコープ）を設定したか？
 - ☑ セマンティック Locator を優先しているか？
 - ☑ `.first()` から逃げる努力をしたか？
 - ☑ 動的値は PageObject 層に置いたか？
@@ -897,7 +897,7 @@ Playwright Locator の普遍原則は次の 4 本柱に集約される：
 
 ```text
 1. 意味を捉える（role + name + exact / text-is）
-2. 宇宙を限定する（scope / Local Universe）
+2. 探索スコープを絞る（scope）
 3. 偶然を排除する（一意性の確保）
 4. 構造に依存しない（anti-XPath）
 ```
@@ -991,7 +991,7 @@ UI 文言の重複により、
 - 完全一致だけでは一意化できない
 - partial テキスト一致では誤爆しやすい
 
-→ **Local Universe（親コンテナ）や near() が必須になる背景。**
+→ **探索スコープ（親コンテナ）や near() が必須になる背景。**
 
 ### 1.5 モーダルの class 名が意味を持たず、唯一信頼できるのは `role="dialog"`
 
@@ -1038,7 +1038,7 @@ UI 文言の重複により、
 
 - UI の "意味"（text）で anchor を張る
 - 近接関係（near）で意味不足を補う
-- 局所宇宙（Local Universe）で探索を絞る
+- 探索スコープ（Search Scope）で探索を絞る
 - アイコン構造（data-icon）を利用する
 - モーダルは role で確定する
 
@@ -1111,7 +1111,7 @@ await modal.getByRole('button', { name: '保存', exact: true }).click();
 メリット：
 
 - 背景の「保存」ボタンを誤クリックしない
-- モーダル内部を "局所宇宙（Local Universe）" として扱える
+- モーダル内部を "探索スコープ（Search Scope）" として扱える
 - DOM 構造変化に強い
 
 ### 2.3 アイコンボタンは svg[data-icon] を anchor にする
@@ -1181,12 +1181,12 @@ const row = page.locator('tr:has-text("TypeScript入門")');
 row.locator('button:has(svg[data-icon="edit"])').click();
 ```
 
-→ 行（row）が"意味のある局所宇宙"となる。
+→ 行（row）が"意味のある探索スコープ"となる。
 
-#### Local Universe を積極的に使う
+#### 探索スコープを積極的に使う
 
 意味層の薄い UI が多いため、
-「意味を持つ単位」で宇宙を切り出すのが極めて重要。
+「意味を持つ単位」で探索スコープを切り出すのが極めて重要。
 
 例：
 
@@ -1248,7 +1248,7 @@ page.locator('button:has-text("保存")');
 - モーダルと背景で同じ文言が出る
 - 部分一致は誤爆が発生しやすい
 
-→ **完全一致（role + name + exact / text-is） + scope（Local Universe）が必須。**
+→ **完全一致（role + name + exact / text-is） + 探索スコープが必須。**
 
 ### 3.3 モーダルを page 全体で探索する
 
@@ -1261,7 +1261,7 @@ page.getByRole('button', { name: '保存', exact: true }).click();
 - 実行ログ上は成功に見えても、本当は誤った UI を操作している
 - バグに見える挙動の多くが「Locator の誤爆」
 
-→ **固有ルールでは role="dialog" の Local Universe を必ず使用。**
+→ **固有ルールでは role="dialog" の 探索スコープを必ず使用。**
 
 ### 3.4 `.first()` の使用
 
@@ -1293,9 +1293,9 @@ modal.getByRole('button', { name: '保存', exact: true }).click();
 ```
 
 → 背景 UI への誤爆を完全に防止。
-→ モーダル内部の"小宇宙（Local Universe）"で安定性が最高。
+→ モーダル内部の"探索スコープ"で安定性が最高。
 
-### 4.2 row（行）を Universe とし、中のアイコンを操作する
+### 4.2 row（行）を 探索スコープとし、中のアイコンを操作する
 
 ```ts
 const row = page.locator('tr:has-text("TypeScript入門")');
@@ -1322,7 +1322,7 @@ row.locator('button:has(svg[data-icon="delete"])');
 → class 名・text が役に立たないため、
 → **data-icon が唯一の安定 anchor。**
 
-### 4.5 Local Universe の積極採用
+### 4.5 探索スコープの積極採用
 
 - カード
 - タブコンテンツ
@@ -1349,7 +1349,7 @@ row.locator('button:has(svg[data-icon="delete"])');
 ☑ アイコンの text や class に依存していないか？
 
 ### row + 内部要素
-☑ 行を Local Universe として扱っているか？
+☑ 行を 探索スコープとして扱っているか？
 ☑ 行内の要素操作が明確に anchor されているか？
 
 ### テキスト
@@ -1372,8 +1372,8 @@ row.locator('button:has(svg[data-icon="delete"])');
 1. near()（意味不足の補完）
 2. role="dialog"（唯一安定するモーダル anchor）
 3. svg[data-icon]（UI ライブラリが保証する icon anchor）
-4. Local Universe（意味単位での探索）
-5. 行 anchor（row を宇宙とする）
+4. 探索スコープ（意味単位での探索）
+5. 行 anchor（row を探索スコープとする）
 ```
 
 これらを守ることで、
