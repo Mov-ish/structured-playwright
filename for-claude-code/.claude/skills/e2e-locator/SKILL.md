@@ -62,7 +62,7 @@ page.locator('button:has-text("保存")')
 // ✅ 完全一致（role + name + exact）
 page.getByRole('button', { name: '保存', exact: true })
 
-// ✅ has-text を使う場合は必ず Local Universe で絞る + 要素型で限定する
+// ✅ has-text を使う場合は必ず探索スコープで絞る + 要素型で限定する
 page.locator('[role="dialog"] button:has-text("保存")')
 ```
 
@@ -83,7 +83,7 @@ page.locator(`span:text-is("ログイン")`)
 // ✅ 堅牢: 広いパターン+除外フィルター
 .getByRole('button', { name: /完全削除/ }).filter({ hasNotText: 'すべて' })
 ```
-※ アンカーなしの広いパターンは変更耐性目的の**意図的な部分一致** — 一意化は `hasNotText` / Local Universe が担う。**完全一致の代替**に使うなら `^` `$` 必須（antd 自動スペース回避: `e2e-locator/ant-design-button-label.md`）。
+※ アンカーなしの広いパターンは変更耐性目的の**意図的な部分一致** — 一意化は `hasNotText` / 探索スコープが担う。**完全一致の代替**に使うなら `^` `$` 必須（antd 自動スペース回避: `e2e-locator/ant-design-button-label.md`）。
 
 ## §3. :near()（意味層が薄い要素）
 
@@ -117,7 +117,7 @@ page.locator('input[name="password"]')
 page.locator('input[type="email"]')
 ```
 
-## §6. 親要素で絞り込み（Local Universe）
+## §6. 親要素で絞り込み（探索スコープ）
 
 ```typescript
 // モーダル内
@@ -224,12 +224,12 @@ await this.activeDialog().getByRole('button', { name: '削除する' }).click();
 | 用途 | 使うもの |
 |------|---------|
 | stale dialog の中から「最後に開いた＝アクティブ」を取る（`.last()` が要る） | `getByRole('dialog').last()`（`activeDialog()`）— getByRole は hidden 自動除外で stale に堅牢 |
-| 単一モーダルにスコープして中の要素を取る（`.last()` 不要） | `SELECTORS.MODAL`（`[role="dialog"]`）— Local Universe の宇宙定数 |
+| 単一モーダルにスコープして中の要素を取る（`.last()` 不要） | `SELECTORS.MODAL`（`[role="dialog"]`）— 探索スコープの定数 |
 | ハイブリッド `page.locator(SELECTORS.MODAL).last()` | ❌ 禁止（hidden 除外しない属性セレクタに stale 対策の `.last()` を貼る矛盾。詳細 `prohibited-patterns.md`「アクティブモーダルのイディオム」） |
 
 > `activeDialog()` の `.last()` は「フレームワーク不変条件（DOM 末尾＝最前面）」に基づくカテゴリB の ordinal。理由コメントは要るが TODO は不要（`prohibited-patterns.md`「ordinal セレクタの許容境界」）。
 
-**カードリストの Local Universe**: カード型 UI（Ant Design `.ant-card`, MUI `.MuiCard-root`, Tailwind 独自 card class など）で項目が並ぶ画面では、同じテキストがパンくず / サイドメニュー / 一覧で重複しがち。カード本体にスコープを絞ると安定する。
+**カードリストの探索スコープ**: カード型 UI（Ant Design `.ant-card`, MUI `.MuiCard-root`, Tailwind 独自 card class など）で項目が並ぶ画面では、同じテキストがパンくず / サイドメニュー / 一覧で重複しがち。カード本体にスコープを絞ると安定する。
 
 ```typescript
 // ❌ page スコープ → パンくず / サイドメニューの同名テキスト誤爆リスク
@@ -271,7 +271,7 @@ ordinal は用途で3カテゴリに分かれ、要求が異なる（詳細 `pro
 ### カテゴリA: 曖昧マッチの応急処置（`.first()` が典型）
 「複数マッチしたから位置で選ぶ」= 偶然の固定化。次の順で消す努力をし、消せなければ理由コメント **+ TODO**（順序は `locator-principles.md`「優先順位ピラミッド」に対応）。
 
-1. **最優先**: name / 完全一致（`getByRole(..., { name, exact: true })` / `:text-is()`）/ Local Universe で一意特定（セマンティック）
+1. **最優先**: name / 完全一致（`getByRole(..., { name, exact: true })` / `:text-is()`）/ 探索スコープで一意特定（セマンティック）
 2. **次善**: `:near()` で周辺テキストから特定
 3. **妥協**: 親要素で絞り込んでから ordinal
 4. **最終**: ordinal + 詳細コメント + TODO

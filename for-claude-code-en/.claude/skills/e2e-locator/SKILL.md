@@ -62,7 +62,7 @@ page.locator('button:has-text("Save")')
 // ✅ Exact match (role + name + exact)
 page.getByRole('button', { name: 'Save', exact: true })
 
-// ✅ If you must use has-text, always narrow with a Local Universe + qualify with an element type
+// ✅ If you must use has-text, always narrow with a search scope + qualify with an element type
 page.locator('[role="dialog"] button:has-text("Save")')
 ```
 
@@ -83,7 +83,7 @@ page.locator(`span:text-is("Log in")`)
 // ✅ Robust: broad pattern + exclusion filter
 .getByRole('button', { name: /Permanently delete/ }).filter({ hasNotText: 'all' })
 ```
-Note: an unanchored broad pattern is a **deliberate partial match** for copy-change resilience — uniqueness comes from `hasNotText` / a Local Universe. As a **substitute for exact matching**, `^` `$` are mandatory (antd auto-space workaround: `e2e-locator/ant-design-button-label.md`).
+Note: an unanchored broad pattern is a **deliberate partial match** for copy-change resilience — uniqueness comes from `hasNotText` / a search scope. As a **substitute for exact matching**, `^` `$` are mandatory (antd auto-space workaround: `e2e-locator/ant-design-button-label.md`).
 
 ## §3. :near() (Elements with a Minimal Semantic Layer)
 
@@ -117,7 +117,7 @@ page.locator('input[name="password"]')
 page.locator('input[type="email"]')
 ```
 
-## §6. Narrowing by Parent Element (Local Universe)
+## §6. Narrowing by Parent Element (Search Scope)
 
 ```typescript
 // Inside a modal
@@ -224,12 +224,12 @@ await this.activeDialog().getByRole('button', { name: 'Delete' }).click();
 | Purpose | Use |
 |------|---------|
 | Pick the "most recently opened = active" one among stale dialogs (`.last()` is needed) | `getByRole('dialog').last()` (`activeDialog()`) — getByRole auto-excludes hidden elements, robust against stale dialogs |
-| Scope to a single modal and grab elements inside it (no `.last()` needed) | `SELECTORS.MODAL` (`[role="dialog"]`) — the Local Universe universe constant |
+| Scope to a single modal and grab elements inside it (no `.last()` needed) | `SELECTORS.MODAL` (`[role="dialog"]`) — the search-scope constant |
 | Hybrid `page.locator(SELECTORS.MODAL).last()` | ❌ Prohibited (contradiction: applying the stale-dialog `.last()` to an attribute selector that does not exclude hidden elements. Details in `prohibited-patterns.md`, "Active modal idiom") |
 
 > The `.last()` in `activeDialog()` is a Category B ordinal based on a framework invariant (end of DOM = frontmost). A reason comment is required but no TODO (`prohibited-patterns.md`, "Acceptable boundaries for ordinal selectors").
 
-**Local Universe for card lists**: on screens listing card-style UI items (Ant Design `.ant-card`, MUI `.MuiCard-root`, custom Tailwind card classes, etc.), the same text tends to be duplicated across breadcrumbs / side menu / list. Scoping to the card body stabilizes things.
+**Search scope for card lists**: on screens listing card-style UI items (Ant Design `.ant-card`, MUI `.MuiCard-root`, custom Tailwind card classes, etc.), the same text tends to be duplicated across breadcrumbs / side menu / list. Scoping to the card body stabilizes things.
 
 ```typescript
 // ❌ page scope → risk of false hits on identically named text in breadcrumbs / side menu
@@ -271,7 +271,7 @@ Ordinals fall into 3 categories by purpose, each with different requirements (de
 ### Category A: Stopgap for Ambiguous Matches (`.first()` is typical)
 "Multiple matches, so pick by position" = solidifying coincidence. Try to eliminate it in the following order; if you cannot, add a reason comment **+ TODO** (the order corresponds to the "Priority Pyramid" in `locator-principles.md`).
 
-1. **Top priority**: unique identification via name / exact match (`getByRole(..., { name, exact: true })` / `:text-is()`) / Local Universe (semantic)
+1. **Top priority**: unique identification via name / exact match (`getByRole(..., { name, exact: true })` / `:text-is()`) / search scope (semantic)
 2. **Next best**: identify via surrounding text with `:near()`
 3. **Compromise**: narrow by parent element, then ordinal
 4. **Last resort**: ordinal + detailed comment + TODO

@@ -12,7 +12,7 @@ gate column: ✓ = detected mechanically by `npm run gate` (exit 1) / ⚠️ = s
 |------|------|------|:---:|
 | `text=Login` notation | Does not work in this project | `:has-text("Login")` or `getByRole` | ✓ |
 | XPath (`//div/span`) | Structure-dependent, breeding ground for AI mis-generation | CSS + semantic | ✓ |
-| CSS structural selectors (`div > div > button`) | Break instantly when the DOM shifts | Meaning-based + Local Universe | — |
+| CSS structural selectors (`div > div > button`) | Break instantly when the DOM shifts | Meaning-based + search scope | — |
 | Ordinal selectors (`.first()` / `.last()` / `.nth()`) without a comment | Freezes a coincidence, unmaintainable (breaks on reorder / element addition) | See "Acceptable Boundaries for Ordinal Selectors" below (branches by use: A = comment + TODO / B & C = reason comment only) | ✓ |
 | `.catch(() => false)` / `.catch(() => true)` | Hides timeouts, false positives | See "Allowed vs. Prohibited try-catch Boundaries" below | ✓ |
 | Defining Locators with `private readonly` (Page Object layer) | Difficult debugging | `readonly` (public) | ✓ |
@@ -23,7 +23,7 @@ gate column: ✓ = detected mechanically by `npm run gate` (exit 1) / ⚠️ = s
 | `waitForTimeout()` in a Page Object | Fixed waits belong to the Action layer | `waitFor()` + try-catch | ⚠️ |
 | `waitForTimeout()` inside a verify method (boolean) | The correctness of the judgment hinges on the wait duration + double waiting (see below) | Consolidate waits on the operation-method side; verify observes only (the gate detects this mechanically via AST) | ✓ |
 | Semantic Locators on elements with a minimal semantic layer | Do not work due to missing attributes | `:near()` / `svg[data-icon]` | — |
-| Using `has-text` without a scope | Same text appears multiple times → mis-hits | Narrow with role+name+exact or a Local Universe | — |
+| Using `has-text` without a scope | Same text appears multiple times → mis-hits | Narrow with role+name+exact or a search scope | — |
 | Searching for a modal across the whole `page` | Accidental clicks on background buttons | Confine with `[role="dialog"]` | — |
 | The `locator(SELECTORS.MODAL).last()` hybrid | The worst combination: slapping the stale-workaround `.last()` onto an attribute selector that does not exclude hidden elements (see below) | Active modal: `getByRole('dialog').last()` / single-modal scoping: `SELECTORS.MODAL` without `.last()` | ✓ |
 | Module-scope random value + implicit dependency across multiple `test()` blocks | No partial execution, no reuse in other tests (see below) | Parameterize / Setup Action / `beforeAll` (see `architecture.md`) | ⚠️ |
@@ -58,7 +58,7 @@ The canonical source for the resolution procedure and code examples (❌ no comm
 | Use case | What to use | Reason |
 |------|---------|------|
 | **Picking the "last opened = active" modal out of accumulating stale dialogs** | `getByRole('dialog').last()` | `getByRole` automatically excludes hidden elements → robust against stale leftovers |
-| **Scoping to a single modal to grab elements inside it** | `SELECTORS.MODAL` (`[role="dialog"]`) | The Local Universe universe constant. Managed in one place across files |
+| **Scoping to a single modal to grab elements inside it** | `SELECTORS.MODAL` (`[role="dialog"]`) | The search-scope constant. Managed in one place across files |
 | **The hybrid `locator(SELECTORS.MODAL).last()`** | ❌ **Prohibited** | The worst combination: slapping the stale-workaround `.last()` onto an attribute selector that does not exclude hidden elements |
 
 ## Prohibited Value Patterns

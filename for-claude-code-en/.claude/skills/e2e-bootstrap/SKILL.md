@@ -56,7 +56,7 @@ export const TIMEOUTS = {
 } as const;
 
 export const SELECTORS = {
-  MODAL: '[role="dialog"]',          // Universe constant for scoping to a single modal (no .last())
+  MODAL: '[role="dialog"]',          // Constant for scoping to a single modal (no .last())
   SUBMIT_BUTTON: 'button[type="submit"]',
 } as const;
 
