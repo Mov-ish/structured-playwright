@@ -185,6 +185,8 @@ await page.locator('.ant-select-item-option')   // Library-specific class
   .filter({ hasText: targetName }).first().click();
 ```
 
+→ For details (the two-layer background, when searching is needed, the truncated-display caveat, and the per-library class table), see [ant-design-select.md](./ant-design-select.md)
+
 **⚠️ Empty tabs become unclickable via `aria-disabled`**: Ant Design Tabs / MUI Tabs / Radix UI Tabs and others add `aria-disabled="true"` when a tab has zero content. Calling `tab.click()` without knowing this makes Playwright's `click()` **hang until the test timeout** waiting for actionability — the worst possible feedback loop (Fail after several minutes, hard to isolate the cause).
 → See [ant-design-tabs-disabled.md](./ant-design-tabs-disabled.md) for details
 
