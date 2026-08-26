@@ -376,9 +376,6 @@ Concept は 4 層アーキテクチャの層ではない。**層の外から、L
 │  Layer 4: Config/Env    共通セレクタを一元管理    │
 │                         （Page Object が参照する）│
 └───────────────────────────────────────────────────┘
-              │ 使う
-              ▼
-     Playwright API（技術の基盤）
 ```
 
 Layer 4 は上の 3 層と並ぶ実行の段ではなく、**全層が参照する値の置き場**である。
@@ -818,7 +815,6 @@ ChatGPT や Claude は XPath の安定生成が苦手であり、
 - **Layer 1（Page Objects）**：Locator を具体的に実装する場所
 - **Layer 2（Actions）/ Layer 3（Tests）**：Locator を直接触ってはならない層
 - **Layer 4（Config/Env）**：共通セレクタ（`SELECTORS.MODAL` 等）の正本。Page Object が参照する
-- **Playwright API**：技術の実体（層の外）
 - **Concept（本書の規範）**：Locator の思想・禁止事項（層の外から規定する）
 
 E2E 開発者は本書の"思想"を理解し、Page Object 層で実践する。

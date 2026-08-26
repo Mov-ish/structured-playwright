@@ -362,9 +362,6 @@ Concept is not one of the four layers. It is the **canon that prescribes, from o
 │  Layer 4: Config/Env     holds shared selectors │
 │                          (read by Page Objects) │
 └─────────────────────────────────────────────────┘
-              │ uses
-              ▼
-     Playwright API (the technical foundation)
 ```
 
 Layer 4 is not a rung in the same execution stack as the three above it; it is the **store of values every layer reads**. What concerns Locators is the shared selectors — `SELECTORS.MODAL` and the like — which Page Objects read from here so that the same selector does not scatter across files.
@@ -784,7 +781,6 @@ This connects directly to the 4-layer architecture:
 - **Layer 1 (Page Objects)**: where Locators are concretely implemented
 - **Layer 2 (Actions) / Layer 3 (Tests)**: the layers that must never touch Locators directly
 - **Layer 4 (Config/Env)**: the canonical home of shared selectors (`SELECTORS.MODAL` etc.), read by Page Objects
-- **Playwright API**: the technical substance (outside the layers)
 - **Concept (the canon in this document)**: the Locator philosophy and its prohibitions, prescribed from outside the layers
 
 An E2E developer understands the "philosophy" of this document and practices it in the Page Object layer.
