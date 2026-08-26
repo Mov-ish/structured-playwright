@@ -200,7 +200,7 @@ Concept では次のように規定する：
 唯一のセマンティック anchor は role 属性。
 
 ```
-モーダルの 探索スコープは role="dialog" を基点に定義する。
+モーダルの探索スコープは role="dialog" を基点に定義する。
 ```
 
 ### 4.3 svg[data-icon] の哲学的位置づけ
@@ -212,12 +212,12 @@ UI ライブラリが icon に安定した data-icon を付与するため、
 アイコンの識別は data-icon が本質 anchor。
 ```
 
-### 4.4 row（行）を 探索スコープとする理由
+### 4.4 row（行）を探索スコープとする理由
 
 表（table）は意味層の薄い UI における数少ない「意味単位」。
 
 ```
-行は UI の意味単位として 探索スコープに採用する。
+行は UI の意味単位として探索スコープに採用する。
 ```
 
 ---
@@ -354,7 +354,7 @@ AI が Locator を生成する際は：
 
 例：
 
-> "この UI は role が無く文言が重複するため、row を 探索スコープとし、中の data-icon を anchor にしています。"
+> "この UI は role が無く文言が重複するため、row を探索スコープとし、中の data-icon を anchor にしています。"
 
 理由を語れる AI は再現性が高く、誤爆しない。
 
@@ -607,7 +607,7 @@ const modal = page.locator('[role="dialog"]');
 modal.getByRole('button', { name: '保存', exact: true }).click();
 ```
 
-### 5.1 なぜ 探索スコープが重要なのか？
+### 5.1 なぜ探索スコープが重要なのか？
 
 - DOM 全体を探索すると一致候補が増える
 - UI の揺れに強くなる
@@ -1262,7 +1262,7 @@ page.getByRole('button', { name: '保存', exact: true }).click();
 - 実行ログ上は成功に見えても、本当は誤った UI を操作している
 - バグに見える挙動の多くが「Locator の誤爆」
 
-→ **固有ルールでは role="dialog" の 探索スコープを必ず使用。**
+→ **固有ルールでは role="dialog" の探索スコープを必ず使用。**
 
 ### 3.4 `.first()` の使用
 
@@ -1296,7 +1296,7 @@ modal.getByRole('button', { name: '保存', exact: true }).click();
 → 背景 UI への誤爆を完全に防止。
 → モーダル内部の"探索スコープ"で安定性が最高。
 
-### 4.2 row（行）を 探索スコープとし、中のアイコンを操作する
+### 4.2 row（行）を探索スコープとし、中のアイコンを操作する
 
 ```ts
 const row = page.locator('tr:has-text("TypeScript入門")');
@@ -1350,7 +1350,7 @@ row.locator('button:has(svg[data-icon="delete"])');
 ☑ アイコンの text や class に依存していないか？
 
 ### row + 内部要素
-☑ 行を 探索スコープとして扱っているか？
+☑ 行を探索スコープとして扱っているか？
 ☑ 行内の要素操作が明確に anchor されているか？
 
 ### テキスト
