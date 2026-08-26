@@ -94,4 +94,4 @@ expect(await action.isItemHidden(targetName)).toBeTruthy(); // 完全削除の�
 ## 関連事項
 
 - `prohibited-patterns.md` 「ハングという形の偽陽性」: 同じ思想で禁止。
-- `locator-principles.md` §1「未来値（Future）」: `isEnabled()` 自体は即時評価で OK だが、可視性の `waitFor({state:'visible'})` を先に挟むのが安全（Future 値で取得可能になるまで待ってから判定）。
+- `locator-principles.md` 「Locatorの本質」の未来値（Future）: `isEnabled()` 自体は即時評価で OK だが、可視性の `waitFor({state:'visible'})` を先に挟むのが安全（Future 値で取得可能になるまで待ってから判定）。
