@@ -361,22 +361,29 @@ AI が Locator を生成する際は：
 
 ## 7. 4 層アーキテクチャとの接続（Concept の位置づけ）
 
-Concept は 4 層アーキテクチャの層ではない。**層の外から、どの層が Locator を書いてよいかを規定する規範** である。
+Concept は 4 層アーキテクチャの層ではない。**層の外から、Locator の書き方を規定する規範** である。
 
 ```
      Concept（本書の規範）
      Locator の思想・優先順位・禁止事項
               │ 規定する
               ▼
-┌─────────────────────────────────────────────┐
-│  Layer 3: Tests         Locator を書かない  │
-│  Layer 2: Actions       Locator を書かない  │
-│  Layer 1: Page Objects  Locator を実装する  │
-└─────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────┐
+│  Layer 3: Tests         Locator を書かない        │
+│  Layer 2: Actions       Locator を書かない        │
+│  Layer 1: Page Objects  Locator を実装する        │
+├───────────────────────────────────────────────────┤
+│  Layer 4: Config/Env    共通セレクタを一元管理    │
+│                         （Page Object が参照する）│
+└───────────────────────────────────────────────────┘
               │ 使う
               ▼
      Playwright API（技術の基盤）
 ```
+
+Layer 4 は上の 3 層と並ぶ実行の段ではなく、**全層が参照する値の置き場**である。
+Locator に関わるのは `SELECTORS.MODAL` のような共通セレクタで、Page Object が
+ここを参照することで、同じセレクタが複数ファイルに散らばるのを防ぐ。
 
 テストの目的は **UI を操作することではなく、意図を表現すること**。
 Locator は Page Object（Layer 1）に閉じ込め、
@@ -808,9 +815,10 @@ ChatGPT や Claude は XPath の安定生成が苦手であり、
 
 4 層アーキテクチャと密接に関係する：
 
-- **Playwright API**：技術の実体（層の外）
 - **Layer 1（Page Objects）**：Locator を具体的に実装する場所
 - **Layer 2（Actions）/ Layer 3（Tests）**：Locator を直接触ってはならない層
+- **Layer 4（Config/Env）**：共通セレクタ（`SELECTORS.MODAL` 等）の正本。Page Object が参照する
+- **Playwright API**：技術の実体（層の外）
 - **Concept（本書の規範）**：Locator の思想・禁止事項（層の外から規定する）
 
 E2E 開発者は本書の"思想"を理解し、Page Object 層で実践する。

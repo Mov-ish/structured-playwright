@@ -347,22 +347,27 @@ An AI that can articulate its reasons is highly reproducible — and does not mi
 
 ## 7. Connection to the 4-Layer Architecture (Where Concept Sits)
 
-Concept is not one of the four layers. It is the **canon that prescribes, from outside the layers, which layer may write Locators**.
+Concept is not one of the four layers. It is the **canon that prescribes, from outside the layers, how Locators are written**.
 
 ```
      Concept (the canon in this document)
      Locator philosophy, priorities, prohibitions
               │ prescribes
               ▼
-┌───────────────────────────────────────────────┐
-│  Layer 3: Tests          writes no Locators   │
-│  Layer 2: Actions        writes no Locators   │
-│  Layer 1: Page Objects   implements Locators  │
-└───────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  Layer 3: Tests          writes no Locators     │
+│  Layer 2: Actions        writes no Locators     │
+│  Layer 1: Page Objects   implements Locators    │
+├─────────────────────────────────────────────────┤
+│  Layer 4: Config/Env     holds shared selectors │
+│                          (read by Page Objects) │
+└─────────────────────────────────────────────────┘
               │ uses
               ▼
      Playwright API (the technical foundation)
 ```
+
+Layer 4 is not a rung in the same execution stack as the three above it; it is the **store of values every layer reads**. What concerns Locators is the shared selectors — `SELECTORS.MODAL` and the like — which Page Objects read from here so that the same selector does not scatter across files.
 
 The purpose of a test is **not to operate the UI but to express intent**. Locators are confined to Page Objects (Layer 1) and excluded from Actions (Layer 2) and Tests (Layer 3).
 
@@ -776,9 +781,10 @@ it is **prohibited in principle**.
 
 This connects directly to the 4-layer architecture:
 
-- **Playwright API**: the technical substance (outside the layers)
 - **Layer 1 (Page Objects)**: where Locators are concretely implemented
 - **Layer 2 (Actions) / Layer 3 (Tests)**: the layers that must never touch Locators directly
+- **Layer 4 (Config/Env)**: the canonical home of shared selectors (`SELECTORS.MODAL` etc.), read by Page Objects
+- **Playwright API**: the technical substance (outside the layers)
 - **Concept (the canon in this document)**: the Locator philosophy and its prohibitions, prescribed from outside the layers
 
 An E2E developer understands the "philosophy" of this document and practices it in the Page Object layer.
