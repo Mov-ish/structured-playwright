@@ -31,7 +31,7 @@ The whole page is too large a search range. Scoping to a semantic unit — modal
 | Principle | What it prevents |
 |------|---------|
 | **Capture meaning (Semantic Priority)** | Locator collapse on UI changes. Meaning is the layer least likely to change |
-| **Narrow the search scope (Search Scope)** | Mis-hits on identical text. The case where "Save" exists twice: in the background and in a modal |
+| **Limit where you look (Search Scope)** | Mis-hits on identical text. The case where "Save" exists twice: in the background and in a modal |
 | **Eliminate coincidence (Deterministic)** | Sudden breakage from ordinal selectors (`.first()`/`.last()`/`.nth()`) when the UI is reordered or elements are added |
 | **Do not depend on structure (Anti-XPath)** | All Locators collapsing just because the UI library added one div |
 
