@@ -38,9 +38,10 @@ At the Concept level, the definition is this:
 
 ```
 Locator =
-   "evaluated as a future value"
+   "a probe carrying a set of conditions"
  × "points by meaning"
  × "narrows the search scope"
+ × "evaluated as a future value"
 ```
 
 ### 1.1 A Locator Is a "Future Value"
