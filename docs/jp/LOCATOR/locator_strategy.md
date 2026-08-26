@@ -14,8 +14,9 @@
 
 ## 0. Concept の役割
 
-Locator は Playwright API の機能でありながら、
-その使い方のルールは **本書の Concept（規範）** が支配する。
+Playwright API が定めるのは「Locator で何ができるか」まで。
+同じ要素にたどり着く書き方は何通りもあり、どれを選ぶべきかは API の外の問題である。
+その選択を支配するのが **本書の Concept（規範）** である。
 
 なぜなら Locator は：
 

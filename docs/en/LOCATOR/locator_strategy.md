@@ -14,7 +14,7 @@ It is organized from three perspectives:
 
 ## 0. The Role of Concept
 
-The Locator is a feature of the Playwright API, yet the rules for how it is used are governed by **Concept (the canon set out in this document)**.
+The Playwright API defines what you can do with a Locator. It does not define which Locator to write — the same element can be reached many ways. That choice sits outside the API, and it is what **Concept (the canon set out in this document)** governs.
 
 That is because the Locator affects everything:
 
