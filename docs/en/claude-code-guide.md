@@ -19,6 +19,15 @@ A detailed guide to adopting `for-claude-code-en/` in your own project and conti
 
 Copy **exactly 3 things — `.claude/`, `scripts/`, and `CLAUDE.md`** — from under `for-claude-code-en/` to your project root. Why the root: the gate's meta-layer checks read `.claude/` relative to the cwd, and Claude Code automatically picks up `CLAUDE.md` and `.claude/` at the project root.
 
+**A note on line endings (adopting on Windows)**: if the adopting repository has no `.gitattributes` and you clone with `core.autocrlf=true`, `.claude/rules/*.md` is checked out with CRLF. The gate's always-loaded rules-volume check (21) **counts bytes**, so CRLF adds one byte per line to the total (measured on this kit: 42,100 B with LF against 42,631 B with CRLF). If the environment where the baseline was frozen and the environment where the gate runs disagree on line endings, **you get an over-budget ❌ without a single character having changed** — which is exactly the shape of "CI on Linux, development on Windows". Placing this at the root of the adopting repository prevents it:
+
+```
+* text=auto eol=lf
+*.sh text eol=lf
+```
+
+`gate.sh` itself runs fine with CRLF (verified under Git Bash); only the measured total is affected.
+
 ### 2-2. package.json
 
 ```json

@@ -19,6 +19,15 @@
 
 `for-claude-code/` 配下の **`.claude/` `scripts/` `CLAUDE.md` の 3 つ**をプロジェクトルートへコピーする。ルートに置く理由: gate のメタ層チェックは cwd 相対で `.claude/` を読み、Claude Code は プロジェクトルートの `CLAUDE.md` / `.claude/` を自動認識する。
 
+**改行コードの注意（Windows で導入する場合）**: 導入先リポジトリに `.gitattributes` が無く、`core.autocrlf=true` の環境で clone すると `.claude/rules/*.md` が CRLF で展開される。gate の Rules 常時ロード総量チェック（21）は**バイト数を数える**ため、CRLF は 1 行あたり 1 バイト総量を増やす（本キットの実測で LF 42,100 B に対し CRLF 42,631 B）。baseline を凍結した環境と gate を回す環境で改行が違うと、**内容が 1 文字も変わっていなくても超過の ❌ が出る**（CI は Linux・手元は Windows という構成で起きる）。導入先のリポジトリルートに次を置いておくと防げる。
+
+```
+* text=auto eol=lf
+*.sh text eol=lf
+```
+
+なお `gate.sh` 自体は CRLF でも動作する（Git Bash で確認済み）。影響を受けるのは総量の計測値だけ。
+
 ### 2-2. package.json
 
 ```json
