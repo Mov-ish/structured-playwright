@@ -43,6 +43,10 @@ The [`for-claude-code-en/`](./for-claude-code-en/) directory is a drop-in kit fo
 **Not using Claude Code?** The `rules/` and `skills/` under [`for-claude-code-en/.claude/`](./for-claude-code-en/.claude/) are written to be read by humans as well — prohibited-pattern tables with alternatives, decision criteria, and code examples you can adopt directly as team conventions. The documents under [`docs/en/`](./docs/en/index.md) carry the setup guide and the design philosophy; the operational canon lives next to the implementation so it never drifts.
 
 
+### Contributing
+
+Issues and pull requests are welcome. Please open an Issue first — the templates ask the questions that decide whether a change belongs here, and the 📝 Docs update template's three questions govern anything added to `rules/`. See [CONTRIBUTING.md](./CONTRIBUTING.md) for the jp/en parity rule, the sync targets when a gate check changes, and how to run the tests locally.
+
 ### Author
 
 **Ray-ish** ([@Mov-ish](https://github.com/Mov-ish))
@@ -97,6 +101,10 @@ If this template helps your project, a mention in your README or blog — or a s
 
 **Claude Code を使わない場合でも**、[`for-claude-code/.claude/`](./for-claude-code/.claude/) の rules / skills は人間がそのまま読める規範集（禁止 → 代替の対応表・判定基準・コード例つき）として書かれており、チーム規約として直接採用できます。[`docs/`](./docs/jp/index.md) が担うのは導入ガイドと設計思想で、運用規範の正本はドリフトしないよう実装の隣に置いています。
 
+
+### コントリビュートについて
+
+Issue・Pull Request を歓迎します。まず Issue を立ててください — テンプレートは「その変更がここに属するか」を決める質問を含んでおり、📝 Docs update テンプレートの3つの質問は `rules/` への追加すべてに掛かります。jp/en パリティのルール、gate のチェックを変えたときの同期先、テストのローカル実行は [CONTRIBUTING.md](./CONTRIBUTING.md) を参照してください。
 
 ### 著者について
 
