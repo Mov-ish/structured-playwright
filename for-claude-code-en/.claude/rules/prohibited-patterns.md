@@ -4,6 +4,11 @@ The patterns in this file must not be used **in any task whatsoever**.
 
 > **Machine detection**: grep-able patterns are mechanically judged via exit codes by `npm run gate` (`scripts/gate.sh`). This file's role is generation-time guidance ("prohibited → alternative") and providing judgment criteria for items the gate cannot decide (ordinal A/B/C, try-catch boundaries, Silent Skip, etc.).
 
+## Terminology
+
+**False positive (misdetection) = Fail with no defect. False negative (missed defect) = Pass despite a defect.**
+"Positive" means the test detected an anomaly (Fail), not Pass. This meaning is fixed across `rules/` and `skills/`.
+
 ## Prohibited Code Patterns
 
 gate column: ✓ = detected mechanically by `npm run gate` (exit 1) / ⚠️ = surfaced by the gate as a warning (requires visual inspection) / — = judgment-based (decide using the criteria in this file)
@@ -14,7 +19,7 @@ gate column: ✓ = detected mechanically by `npm run gate` (exit 1) / ⚠️ = s
 | XPath (`//div/span`) | Structure-dependent, breeding ground for AI mis-generation | CSS + semantic | ✓ |
 | CSS structural selectors (`div > div > button`) | Break instantly when the DOM shifts | Meaning-based + search scope | — |
 | Ordinal selectors (`.first()` / `.last()` / `.nth()`) without a comment | Freezes a coincidence, unmaintainable (breaks on reorder / element addition) | See "Acceptable Boundaries for Ordinal Selectors" below (branches by use: A = comment + TODO / B & C = reason comment only) | ✓ |
-| `.catch(() => false)` / `.catch(() => true)` | Hides timeouts, false positives | See "Allowed vs. Prohibited try-catch Boundaries" below | ✓ |
+| `.catch(() => false)` / `.catch(() => true)` | Hides timeouts, false positives/negatives | See "Allowed vs. Prohibited try-catch Boundaries" below | ✓ |
 | Defining Locators with `private readonly` (Page Object layer) | Difficult debugging | `readonly` (public) | ✓ |
 | `import { test } from '@playwright/test'` | Bypasses the Fixture | `from '../fixtures/app.fixture'` | ✓ |
 | Direct `new XxxAction(page)` inside a Test | Dependencies not made explicit | Receive via Fixture arguments | ✓ |
@@ -71,7 +76,7 @@ The canonical source for the resolution procedure and code examples (❌ no comm
 | Hard-coded credentials | Security risk | `.env` + `EnvConfig` | — |
 | `waitForTimeout` without a reason comment on that line | Intent unclear, unmaintainable | On that line, state "which preceding operation this waits on, and for what" (paraphrasing the constant name does not count). The constant's own meaning lives at its declaration site (constants.ts) (the gate detects this mechanically) | ✓ |
 | Generating a unique test data name with `Date.now()` alone | Parallel workers (separate processes) collide within the same ms | `uniqueId()` (see "Generate Unique Test Data Names with uniqueId()" below) | ✓ |
-| Partial-match expect (`toContain`/`toContainText`/`toMatch`) without a reason comment | `'1'` ⊂ `'10'`-style false positives = a degradation where everything stays green while only the verification dies | Default to exact matching (`toBe`/`toEqual`). Partial matching requires a comment explaining why exact matching is impossible | ✓ |
+| Partial-match expect (`toContain`/`toContainText`/`toMatch`) without a reason comment | `'1'` ⊂ `'10'`-style false negatives = a degradation where everything stays green while only the verification dies | Default to exact matching (`toBe`/`toEqual`). Partial matching requires a comment explaining why exact matching is impossible | ✓ |
 
 ## Allowed vs. Prohibited try-catch Boundaries
 
@@ -102,7 +107,7 @@ The canonical source for code examples (✅ allowed / ❌ mixed-in / ✅ separat
 
 **WHY**: verify's responsibility is "observe and return true/false." Once a fixed sleep gets mixed in: ① the correctness of the judgment hinges on the wait duration (flaky false negatives / false positives); ② the end of the operation method and the start of the verify wait for the same render to settle twice (dispersed wait ownership = collapse of layer responsibilities); ③ even one remaining instance gets imitated and multiplied by the AI as a "correct pattern."
 
-The canonical source for code examples (❌ fixed wait inside verify / ✅ consolidated into the operation method) and the "transition verification" pattern (the `isPresent → action → isAbsent` pair that eliminates false positives) is **"verify observes only" in `e2e-test-create/test-data-management.md`**.
+The canonical source for code examples (❌ fixed wait inside verify / ✅ consolidated into the operation method) and the "transition verification" pattern (the `isPresent → action → isAbsent` pair that eliminates false negatives) is **"verify observes only" in `e2e-test-create/test-data-management.md`**.
 
 ### Exception
 
@@ -133,7 +138,7 @@ Beyond `waitForTimeout`, **click/hover on a disabled element also produces "fals
 | Situation | Verdict | Recommendation |
 |------|------|------|
 | Directly `click()`-ing a tab/button that becomes disabled when empty | ❌ Hang false positive | Verify with `isEnabled()` beforehand and fail fast |
-| Running an operation that "assumes targets exist" (bulk delete / process-all, etc.) in an empty context | ❌ Empty-swing false positive | Verify target existence with `expect(...).toBeTruthy()` before operating |
+| Running an operation that "assumes targets exist" (bulk delete / process-all, etc.) in an empty context | ❌ Empty-swing false negative | Verify target existence with `expect(...).toBeTruthy()` before operating |
 
 Representative example: **the trap where a UI library's Tabs become `aria-disabled="true"` when their content is empty** (Ant Design Tabs / MUI Tabs / Radix UI Tabs, etc.).
 See `.claude/skills/e2e-locator/ant-design-tabs-disabled.md` for details.

@@ -4,6 +4,11 @@
 
 > **機械検出**: grep 可能なパターンは `npm run gate`（`scripts/gate.sh`）が exit code で機械判定する。本ファイルの役割は「禁止 → 代替」の生成時誘導と、gate で判定できない項目（ordinal A/B/C・try-catch 境界・Silent Skip 等）の判定基準の提供。
 
+## 用語
+
+**偽陽性（誤検知）= 不具合が無いのに Fail。偽陰性（見逃し）= 不具合があるのに Pass。**
+「陽性」はテストが異常を検出した状態（Fail）を指し、Pass ではない。`rules/` `skills/` 全体でこの意味に固定する。
+
 ## コード禁止パターン
 
 gate 列: ✓ = `npm run gate` が機械検出（exit 1）/ ⚠️ = gate が警告として可視化（要目視）/ — = 判断系（本ファイルの判定基準で判断）
@@ -14,7 +19,7 @@ gate 列: ✓ = `npm run gate` が機械検出（exit 1）/ ⚠️ = gate が警
 | XPath (`//div/span`) | 構造依存・AI誤生成の温床 | CSS + セマンティック | ✓ |
 | CSS構造セレクタ (`div > div > button`) | DOM揺れで即破壊 | 意味ベース + 探索スコープ | — |
 | ordinal セレクタ（`.first()` / `.last()` / `.nth()`）コメントなし | 偶然の固定化・保守不能（並び替え/要素追加で破壊） | 下記「ordinal セレクタの許容境界」参照（用途で A=コメント+TODO / B・C=理由コメントのみ に分岐） | ✓ |
-| `.catch(() => false)` / `.catch(() => true)` | タイムアウト隠蔽・false positive | 下記「try-catch の許容/禁止の境界」参照 | ✓ |
+| `.catch(() => false)` / `.catch(() => true)` | タイムアウト隠蔽・偽陽性/偽陰性 | 下記「try-catch の許容/禁止の境界」参照 | ✓ |
 | `private readonly` でLocator定義（Page Object層） | デバッグ困難 | `readonly`（public） | ✓ |
 | `import { test } from '@playwright/test'` | Fixture未経由 | `from '../fixtures/app.fixture'` | ✓ |
 | `new XxxAction(page)` をTest内で直接 | 依存が明示されない | Fixture引数で受け取る | ✓ |
@@ -71,7 +76,7 @@ ordinal は「偶然を排除する」原則（`locator-principles.md`）の対�
 | 認証情報ハードコード | セキュリティリスク | `.env` + `EnvConfig` | — |
 | `waitForTimeout` の当該行に理由コメントなし | 意図不明で保守不能 | 当該行に「直前のどの操作の何を待つか」を書く（定数名の言い換えは不可）。定数自体の意味は宣言元（constants.ts）に置く（gate が機械検出） | ✓ |
 | `Date.now()` 単独で一意テストデータ名を生成 | 並列ワーカー（別プロセス）が同一 ms で衝突 | `uniqueId()`（下記「一意テストデータ名は uniqueId() で生成する」参照） | ✓ |
-| expect の部分一致（`toContain`/`toContainText`/`toMatch`）に理由コメントなし | `'1'`⊂`'10'` 型の偽陽性 = All green のまま検証だけが死ぬ縮退 | 厳密一致（`toBe`/`toEqual`）を既定に。部分一致は「なぜ厳密一致にできないか」の理由コメント必須 | ✓ |
+| expect の部分一致（`toContain`/`toContainText`/`toMatch`）に理由コメントなし | `'1'`⊂`'10'` 型の偽陰性 = All green のまま検証だけが死ぬ縮退 | 厳密一致（`toBe`/`toEqual`）を既定に。部分一致は「なぜ厳密一致にできないか」の理由コメント必須 | ✓ |
 
 ## try-catch の許容/禁止の境界
 
@@ -102,7 +107,7 @@ catch で `false` を返すコード全てが禁止ではない。**catch が何
 
 **WHY**: verify の責務は「観測して真偽を返す」こと。固定 sleep が混ざると①判定の正しさが待ち時間に賭かる（flaky な偽陰性/偽陽性）②操作メソッド末尾と verify 冒頭が同じ描画安定を二重に待つ（待機所有者の分散 = 層責務の崩れ）③1件でも残ると AI が正解パターンとして模倣・増殖する。
 
-コード例（❌verify 内固定待機 / ✅操作メソッドへ集約）と「遷移検証」パターン（`isPresent → action → isAbsent` の対で偽陽性を排除）は **`e2e-test-create/test-data-management.md`「verify は観測のみ」が正本**。
+コード例（❌verify 内固定待機 / ✅操作メソッドへ集約）と「遷移検証」パターン（`isPresent → action → isAbsent` の対で偽陰性を排除）は **`e2e-test-create/test-data-management.md`「verify は観測のみ」が正本**。
 
 ### 例外
 
@@ -133,7 +138,7 @@ catch で `false` を返すコード全てが禁止ではない。**catch が何
 | 状況 | 判定 | 推奨 |
 |------|------|------|
 | 中身が空で disabled になるタブ・ボタンを直接 `click()` | ❌ ハング偽陽性 | 事前に `isEnabled()` を検証して即 fail-fast |
-| 「対象が存在する前提」の操作（一括削除 / 全件処理 等）を空コンテキストで実行 | ❌ 空振り偽陽性 | 操作前に対象の存在を `expect(...).toBeTruthy()` で検証 |
+| 「対象が存在する前提」の操作（一括削除 / 全件処理 等）を空コンテキストで実行 | ❌ 空振り偽陰性 | 操作前に対象の存在を `expect(...).toBeTruthy()` で検証 |
 
 代表例: **UI ライブラリの Tabs で中身が空のとき `aria-disabled="true"` になる罠**（Ant Design Tabs / MUI Tabs / Radix UI Tabs 等）。
 詳細は `.claude/skills/e2e-locator/ant-design-tabs-disabled.md` を参照。

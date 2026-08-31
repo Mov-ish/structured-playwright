@@ -208,13 +208,13 @@ export class BaseAction {
    * HTML report: test.step() nesting shows Action internals hierarchically
    *
    * Important: errors during fn() execution are NOT caught and propagate as-is.
-   *            Only the test-context detection is caught. Prevents false positives (flaky passes).
+   *            Only the test-context detection is caught. Prevents false negatives (flaky passes).
    */
   protected async step(name: string, fn: () => Promise<void>): Promise<void> {
     const { prefix, hasTestContext } = this.resolveTestContext();
     const mainNo = this.stepCounter?.currentMain ?? 0;
     // stepCounter injected but mainNo === 0 = beginAction() was forgotten.
-    // Do not let it pass silently — throw immediately (early detection of design violations / false-positive prevention)
+    // Do not let it pass silently — throw immediately (early detection of design violations / false-negative prevention)
     if (this.stepCounter && mainNo === 0) {
       throw new Error(
         `[${this.actionName}] beginAction() was not called. Always call this.beginAction() at the start of every public method`

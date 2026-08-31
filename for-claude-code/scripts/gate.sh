@@ -132,7 +132,7 @@ check "Action 層 Locator 直書き" "Page Object に移しメソッド経由で
 check "Test 層 Locator 直書き" "Action の verify メソッド経由で検証する" \
   -rnE '\.(locator|getBy[A-Za-z]+)\(' src/tests/
 
-# 9. .catch 隠蔽（タイムアウト隠蔽・偽陽性）
+# 9. .catch 隠蔽（タイムアウト隠蔽・偽陽性/偽陰性）
 #    検出: .catch(()=>false) / .catch(() => { return true }) / .catch(e => false) 等
 #    非検出: .catch(handleError) / .catch(e => fallback(e)) 等（正当形）
 check ".catch(() => false/true) 隠蔽" "waitFor + try-catch に分離（境界は prohibited-patterns.md 参照）" \
@@ -201,7 +201,7 @@ AWK_COMMENT_FUNCS='
 # 15. ordinal セレクタ（.first/.last/.nth）で当該行にコメントなし（旧 W2 — ❌ に昇格）
 #     A（応急処置）= コメント + TODO 必須 / B（不変条件）= 理由コメント必須
 #     （prohibited-patterns.md「ordinal セレクタの許容境界」）
-#     直前行は見ない — 別の statement の説明コメントを理由コメントと誤認する false negative を
+#     直前行は見ない — 別の statement の説明コメントを理由コメントと誤認する偽陰性を
 #     防ぐ。理由コメントは当該行（行頭コメント行 or 行末インラインコメント）に書く運用に統一する。
 #     複数行呼び出しで理由コメントが引数行にあるケースも検出される（バグではなく仕様 —
 #     コメントは呼び出し行に書く）
@@ -226,11 +226,11 @@ C16=$(find src -name '*.ts' -not -path '*/config/*' -print0 2>/dev/null | xargs 
 fail_print "waitForTimeout 理由コメントなし" "TIMEOUTS 定数 + 理由コメント（直前のどの操作の何を待つか）を付与" "$C16"
 
 # 17. expect の部分一致（toContain/toContainText/toMatch）で当該行に理由コメントなし
-#     assert は厳密一致（toBe/toEqual）が既定。部分一致は '1' ⊂ '10' 型の偽陽性を生むため
+#     assert は厳密一致（toBe/toEqual）が既定。部分一致は '1' ⊂ '10' 型の偽陰性を生むため
 #     「なぜ厳密一致にできないか」の理由コメント必須（prohibited-patterns.md「値の禁止パターン」。
 #     expect は Test 層にのみ書けるため src/tests のみ走査）。
 #     toContainText は Locator 用の別 matcher（expect(locator).toContainText(...)）— 同じ部分一致の
-#     偽陽性を持つため対象に含める（narrow な正規表現は偽の安心 — broad に倒す）
+#     偽陰性を持つため対象に含める（narrow な正規表現は偽の安心 — broad に倒す）
 C17=$(find src/tests -name '*.ts' -print0 2>/dev/null | xargs -0 awk "$AWK_COMMENT_FUNCS"'
   /\.(toContain(Text)?|toMatch)\(/ {
     if (!is_comment_line($0) && !has_inline_comment($0))

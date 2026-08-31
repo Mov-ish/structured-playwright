@@ -158,7 +158,7 @@ async isItemAbsent(title: string): Promise<boolean> {
 **「遷移検証」パターン**: verify が「ある状態であること」を返すなら、呼び出し側で変化前後を両方検証する。「`isAbsent` 単独」では「最初から存在しなかった」のか「削除で消えた」のかを区別できない。
 
 ```typescript
-// 削除前: 対象が存在する (この前提検証がないと「削除で消えた」と言えず偽陽性)
+// 削除前: 対象が存在する (この前提検証がないと「削除で消えた」と言えず偽陰性)
 expect(await resourceAction.isItemPresent(title)).toBeTruthy();
 await resourceAction.deleteItem();
 // 削除後: 対象が消えた
@@ -175,7 +175,7 @@ async checkRequired(): Promise<void> {
   try {
     await this.checkbox.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_CHECK });
   } catch {
-    console.log('見つからないのでスキップ');  // ← テスト条件が満たされず Pass する偽陽性
+    console.log('見つからないのでスキップ');  // ← テスト条件が満たされず Pass する偽陰性
     return;
   }
   await this.checkbox.check();
@@ -201,15 +201,15 @@ async checkRequired(required: boolean): Promise<void> {
 
 ### Cleanup フェーズの正直な検証
 
-`permanentDeleteAll()` / `clearAll()` 等の「全件削除」操作は対象が無くても素通りするため、**前後で対象の存在/消失を expect する**ことで空振り（偽陽性）を防ぐ。
+`permanentDeleteAll()` / `clearAll()` 等の「全件削除」操作は対象が無くても素通りするため、**前後で対象の存在/消失を expect する**ことで空振り（偽陰性）を防ぐ。
 
 | 試したこと | 結果 | 理由 |
 |-----------|------|------|
-| タブ切替 → `permanentDeleteAll()` のみ | ❌ | 対象が空でも素通りして Pass する偽陽性 |
+| タブ切替 → `permanentDeleteAll()` のみ | ❌ | 対象が空でも素通りして Pass する偽陰性 |
 | 削除前: 対象が存在する `expect(isXxxVisible).toBeTruthy()` + 削除後: 対象が消えた `expect(isXxxHidden).toBeTruthy()` | ✅ | 削除フローが本当に動いた証跡が残る |
 
 ```typescript
-// ✅ 偽陽性ゼロの cleanup パターン
+// ✅ 偽陰性ゼロの cleanup パターン
 // isItemHidden は waitFor({state:'hidden'}) 方向の待機 — !isItemVisible では代替不可
 expect(await action.hasItemsInTab('アーカイブ')).toBeTruthy();         // タブ切替前ガード
 await navigationAction.switchTab('アーカイブ');

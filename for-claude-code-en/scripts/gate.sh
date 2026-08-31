@@ -140,7 +140,7 @@ check "inline Locator in Action layer" "move it into a Page Object and call it t
 check "inline Locator in Test layer" "verify through the Action's verify method" \
   -rnE '\.(locator|getBy[A-Za-z]+)\(' src/tests/
 
-# 9. .catch suppression (hides timeouts; false positives)
+# 9. .catch suppression (hides timeouts; false positives/negatives)
 #    Detected: .catch(()=>false) / .catch(() => { return true }) / .catch(e => false) etc.
 #    Not detected: .catch(handleError) / .catch(e => fallback(e)) etc. (legitimate forms)
 check ".catch(() => false/true) suppression" "split into waitFor + try-catch (see prohibited-patterns.md for the boundary)" \
@@ -245,12 +245,12 @@ fail_print "waitForTimeout without reason comment" "use a TIMEOUTS constant + a 
 
 # 17. Partial-match expect (toContain/toContainText/toMatch) with no reason comment on that line
 #     Strict equality (toBe/toEqual) is the default for asserts. Partial matching
-#     produces '1' ⊂ '10'-style false positives, so a reason comment explaining
+#     produces '1' ⊂ '10'-style false negatives, so a reason comment explaining
 #     "why strict equality is not possible" is required (prohibited-patterns.md
 #     "Prohibited value patterns". expect may only be written in the Test layer,
 #     so only src/tests is scanned).
 #     toContainText is a separate Locator matcher (expect(locator).toContainText(...)) —
-#     it has the same partial-match false positives, so it is included
+#     it has the same partial-match false negatives, so it is included
 #     (a narrow regex is false reassurance — lean broad)
 C17=$(find src/tests -name '*.ts' -print0 2>/dev/null | xargs -0 awk "$AWK_COMMENT_FUNCS"'
   /\.(toContain(Text)?|toMatch)\(/ {
