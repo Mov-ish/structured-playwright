@@ -20,7 +20,7 @@ Locator は CSS query (関数) を保持しているだけで element reference 
 
 **1. 意味ベースで操作されるべき**
 構造（divの入れ子）ではなく意味（role, name, label, text）で要素を捉える。UIの意味は変更されにくいが、構造は頻繁に変わる。
-→ CSS構造セレクタやXPathは原則禁止。
+→ XPath は禁止（gate がチェック2で exit 1）。CSS構造セレクタは最終手段のみで、コメント + TODO 必須。
 
 **2. 探索スコープを絞る**
 ページ全体は探索範囲として大きすぎる。モーダル・行・カード等の意味単位で括ると、一意性向上・DOM変更に強い・意図が明確。Playwright 公式ドキュメントの "Matching inside a locator"（Locator を連鎖させて探索範囲を絞る）がこれにあたる。
