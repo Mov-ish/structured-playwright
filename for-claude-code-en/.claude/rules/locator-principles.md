@@ -20,7 +20,7 @@ The two principles below are the philosophy for designing Locators on top of thi
 
 **1. It should be operated on a semantic basis**
 Capture elements by meaning (role, name, label, text), not structure (nested divs). The meaning of a UI rarely changes, but its structure changes frequently.
-→ CSS structural selectors and XPath are prohibited as a rule.
+→ XPath is prohibited (the gate exits 1 on check 2). CSS structural selectors are a last resort only, requiring a comment + TODO.
 
 **2. Narrow the search scope**
 The whole page is too large a search range. Scoping to a semantic unit — modal, row, card, etc. — improves uniqueness, resilience to DOM changes, and clarity of intent. Playwright's own docs cover this under "Matching inside a locator" — chaining locators to narrow the search.
