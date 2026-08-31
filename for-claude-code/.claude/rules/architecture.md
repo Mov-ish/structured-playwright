@@ -75,7 +75,7 @@ rules は実装コードを持たない（コピーのドリフトが「古い�
 
 - `protected beginAction(): void` — Action の public メソッド先頭で必須（対象の詳細は下の「beginAction() のルール」表）
 - `protected async step(name: string, fn: () => Promise<void>): Promise<void>` — 各ステップの記録。コンソール出力（`[Suite / Phase] Step N: ActionName - 詳細`）と `test.step()`（HTML レポート階層表示）を同時に行う
-- `step()` は **fn() 実行中のエラーを catch せず伝播させる**（catch すると偽 Pass = flaky pass の温床）
+- `step()` は **fn() 実行中のエラーを catch せず伝播させる**（catch すると偽陰性（flaky pass）の温床）
 - **`beginAction()` 忘れの状態で `step()` が呼ばれると即 throw**（silent 通過させない。このエラーに遭遇したら原因は呼び忘れ）
 - メイン番号 = Action の **public メソッド呼び出し単位**（Action 内部の複数 `step()` は同番号を共有し、内部詳細は HTML レポートのネストで表現）
 - 各 worker は**独立した StepCounter** を持つ — 異なる describe の番号同士は比較できない
@@ -96,7 +96,7 @@ prefix の自動導出（titlePath・`:` 分割）や出力例などの実装詳
 | 検証メソッド（`isXxx()` → boolean 等） | 不要（step() を使わない） |
 | private / protected メソッド | 不要 |
 
-`beginAction()` を呼び忘れた状態で `this.step()` が呼ばれると、`BaseAction.step()` が即 **throw** する（silent 通過させない）。これは「設計違反の早期検知」と本テンプレートの偽陽性防止思想に沿った挙動。
+`beginAction()` を呼び忘れた状態で `this.step()` が呼ばれると、`BaseAction.step()` が即 **throw** する（silent 通過させない）。これは「設計違反の早期検知」と本テンプレートの偽陰性防止思想に沿った挙動。
 
 ### ネスト防止ルール
 

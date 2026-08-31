@@ -94,15 +94,15 @@ await sideMenu.click();
 
 ## Honest verification in the Cleanup phase
 
-"Delete all" operations like `permanentDeleteAll()` / `clearAll()` pass straight through even when there is nothing to delete, so **expect the target's existence/disappearance before and after** to prevent no-op passes (false positives).
+"Delete all" operations like `permanentDeleteAll()` / `clearAll()` pass straight through even when there is nothing to delete, so **expect the target's existence/disappearance before and after** to prevent no-op passes (false negatives).
 
 | What was tried | Result | Reason |
 |-----------|------|------|
-| Tab switch → `permanentDeleteAll()` only | ❌ | Passes even when the target list is empty — a false positive |
+| Tab switch → `permanentDeleteAll()` only | ❌ | Passes even when the target list is empty — a false negative |
 | Before deletion: `expect(isXxxVisible).toBeTruthy()` that the target exists + after deletion: `expect(isXxxHidden).toBeTruthy()` that it's gone | ✅ | Leaves evidence that the deletion flow actually ran |
 
 ```typescript
-// ✅ Zero-false-positive cleanup pattern
+// ✅ Zero-false-negative cleanup pattern
 expect(await action.hasItemsInTab('Archived')).toBeTruthy();   // guard before switching tabs
 await navigationAction.switchTab('Archived');
 expect(await action.isItemVisible(targetName)).toBeTruthy();     // the target actually exists in Archived

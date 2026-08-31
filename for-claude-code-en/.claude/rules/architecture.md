@@ -95,7 +95,7 @@ The canonical source for code and output examples is `e2e-bootstrap` §6.
 | Verification methods (`isXxx()` → boolean, etc.) | Not needed (they do not use step()) |
 | private / protected methods | Not needed |
 
-If `this.step()` is called while `beginAction()` was forgotten, `BaseAction.step()` **throws** immediately (no silent pass-through). This behavior aligns with "early detection of design violations" and this template's false-positive prevention philosophy.
+If `this.step()` is called while `beginAction()` was forgotten, `BaseAction.step()` **throws** immediately (no silent pass-through). This behavior aligns with "early detection of design violations" and this template's false-negative prevention philosophy.
 
 ### Anti-Nesting Rule
 

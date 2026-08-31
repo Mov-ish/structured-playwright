@@ -158,7 +158,7 @@ async isItemAbsent(title: string): Promise<boolean> {
 **The "transition verification" pattern**: when verify returns "being in a certain state", the caller verifies both before and after the change. `isAbsent` alone cannot distinguish "never existed in the first place" from "removed by the deletion".
 
 ```typescript
-// Before deletion: the target exists (without this precondition check you can't claim "the deletion removed it" — false positive)
+// Before deletion: the target exists (without this precondition check you can't claim "the deletion removed it" — false negative)
 expect(await resourceAction.isItemPresent(title)).toBeTruthy();
 await resourceAction.deleteItem();
 // After deletion: the target is gone
@@ -175,7 +175,7 @@ async checkRequired(): Promise<void> {
   try {
     await this.checkbox.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_CHECK });
   } catch {
-    console.log('Not found, skipping');  // ← passes without the test condition being met — a false positive
+    console.log('Not found, skipping');  // ← passes without the test condition being met — a false negative
     return;
   }
   await this.checkbox.check();
@@ -201,15 +201,15 @@ async checkRequired(required: boolean): Promise<void> {
 
 ### Honest verification in the Cleanup phase
 
-"Delete all" operations like `permanentDeleteAll()` / `clearAll()` pass straight through even when there is nothing to delete, so **expect the target's existence/disappearance before and after** to prevent no-op passes (false positives).
+"Delete all" operations like `permanentDeleteAll()` / `clearAll()` pass straight through even when there is nothing to delete, so **expect the target's existence/disappearance before and after** to prevent no-op passes (false negatives).
 
 | What was tried | Result | Reason |
 |-----------|------|------|
-| Tab switch → `permanentDeleteAll()` only | ❌ | Passes even when the target list is empty — a false positive |
+| Tab switch → `permanentDeleteAll()` only | ❌ | Passes even when the target list is empty — a false negative |
 | Before deletion: `expect(isXxxVisible).toBeTruthy()` that the target exists + after deletion: `expect(isXxxHidden).toBeTruthy()` that it's gone | ✅ | Leaves evidence that the deletion flow actually ran |
 
 ```typescript
-// ✅ Zero-false-positive cleanup pattern
+// ✅ Zero-false-negative cleanup pattern
 // isItemHidden waits in the waitFor({state:'hidden'}) direction — !isItemVisible is not a substitute
 expect(await action.hasItemsInTab('Archived')).toBeTruthy();         // guard before switching tabs
 await navigationAction.switchTab('Archived');

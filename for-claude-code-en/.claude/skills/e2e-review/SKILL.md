@@ -93,7 +93,7 @@ grep -rn "\.catch(() => false)\|\.catch(() => true)" src/
 - [ ] No `.catch(() => false)` pattern (see §4)
 
 ### Silent skipping of test conditions
-- [ ] Does the test Fail when an operation it explicitly requires (specified via arguments/parameters) cannot be found (skipping and passing is a false positive)
+- [ ] Does the test Fail when an operation it explicitly requires (specified via arguments/parameters) cannot be found (skipping and passing is a false negative)
 
 ### Structure of test data preparation (base-creation flow bloat / imitation propagation)
 - [ ] **Is a base-creation flow (create resource → add data → publish → register users, etc.) inline-expanded and duplicated inside tests?** — consolidate it into a shared builder (Setup Action). Inline expansion propagates bloat to other tests through AI imitation
@@ -226,7 +226,7 @@ cat test-results/report.json | jq '.stats'
 # → { "expected": N, "unexpected": 0, ... }
 ```
 
-### Cases prone to false positives (misreporting as Pass)
+### Cases prone to false negatives (misreporting as Pass)
 
 | Situation | What happens | Correct report |
 |------|------------|----------|

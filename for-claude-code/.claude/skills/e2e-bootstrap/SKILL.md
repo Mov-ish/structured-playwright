@@ -143,7 +143,7 @@ export default defineConfig({
 ```
 
 **なぜこの設定が必須か**:
-- `timeout` + `expect.timeout`: 無限に待たせない。偽Passの防止
+- `timeout` + `expect.timeout`: 無限に待たせない。偽陰性の防止
 - `json` reporter: report.jsonにステップ構造が残る。Fail時の追跡に必須
 - `trace/video retain-on-failure`: 失敗時のみ保存。trace常時ONは長時間テストのheaded実行でブラウザクラッシュの原因になる。Pass時の証跡はreport.json + screenshotで代替
 - `screenshot on`: 全テストでスクリーンショット保存。Pass時の「正しく動作した証拠」として機能
@@ -207,13 +207,13 @@ export class BaseAction {
    * HTMLレポート: test.step() ネストで Action 内部詳細を階層表示
    *
    * 重要: fn() 実行中のエラーは catch せずそのまま伝播させる。
-   *       catch するのはテストコンテキスト判定のみ。偽陽性（flaky pass）を防止する。
+   *       catch するのはテストコンテキスト判定のみ。偽陰性（flaky pass）を防止する。
    */
   protected async step(name: string, fn: () => Promise<void>): Promise<void> {
     const { prefix, hasTestContext } = this.resolveTestContext();
     const mainNo = this.stepCounter?.currentMain ?? 0;
     // stepCounter が注入されているのに mainNo === 0 = beginAction() 呼び忘れ。
-    // silent 通過させず即 throw（設計違反の早期検知 / 偽陽性防止）
+    // silent 通過させず即 throw（設計違反の早期検知 / 偽陰性防止）
     if (this.stepCounter && mainNo === 0) {
       throw new Error(
         `[${this.actionName}] beginAction() が呼ばれていません。public メソッドの先頭で必ず this.beginAction() を呼んでください`
