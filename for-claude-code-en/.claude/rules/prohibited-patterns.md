@@ -107,7 +107,7 @@ The canonical source for code examples (✅ allowed / ❌ mixed-in / ✅ separat
 
 **WHY**: verify's responsibility is "observe and return true/false." Once a fixed sleep gets mixed in: ① the correctness of the judgment hinges on the wait duration (flaky false negatives / false positives); ② the end of the operation method and the start of the verify wait for the same render to settle twice (dispersed wait ownership = collapse of layer responsibilities); ③ even one remaining instance gets imitated and multiplied by the AI as a "correct pattern."
 
-The canonical source for code examples (❌ fixed wait inside verify / ✅ consolidated into the operation method) and the "transition verification" pattern (the `isPresent → action → isAbsent` pair that eliminates false negatives) is **"verify observes only" in `e2e-test-create/test-data-management.md`**.
+The canonical source for code examples (❌ fixed wait inside verify / ✅ consolidated into the operation method) and the "before/after verification" pattern (the `isPresent → action → isAbsent` pair that eliminates false negatives) is **"verify observes only" in `e2e-test-create/test-data-management.md`**.
 
 ### Exception
 
@@ -143,7 +143,7 @@ Beyond `waitForTimeout`, **click/hover on a disabled element also produces "fals
 Representative example: **the trap where a UI library's Tabs become `aria-disabled="true"` when their content is empty** (Ant Design Tabs / MUI Tabs / Radix UI Tabs, etc.).
 See `.claude/skills/e2e-locator/ant-design-tabs-disabled.md` for details.
 
-The canonical source for pre-guard code examples (the transition verification of existence check → switch → operate → absence check) is **"Honest verification in the Cleanup phase" in `e2e-test-create/test-data-management.md`**.
+The canonical source for pre-guard code examples (the before/after verification of existence check → switch → operate → absence check) is **"Honest verification in the Cleanup phase" in `e2e-test-create/test-data-management.md`**.
 
 ## Warning Patterns in AI-Generated Code
 

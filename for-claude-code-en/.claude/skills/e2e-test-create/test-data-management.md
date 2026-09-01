@@ -155,7 +155,7 @@ async isItemAbsent(title: string): Promise<boolean> {
 }
 ```
 
-**The "transition verification" pattern**: when verify returns "being in a certain state", the caller verifies both before and after the change. `isAbsent` alone cannot distinguish "never existed in the first place" from "removed by the deletion".
+**The "before/after verification" pattern**: when verify returns "being in a certain state", the caller verifies both before and after the change. `isAbsent` alone cannot distinguish "never existed in the first place" from "removed by the deletion".
 
 ```typescript
 // Before deletion: the target exists (without this precondition check you can't claim "the deletion removed it" — false negative)
