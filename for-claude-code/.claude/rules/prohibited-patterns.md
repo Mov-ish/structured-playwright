@@ -107,7 +107,7 @@ catch で `false` を返すコード全てが禁止ではない。**catch が何
 
 **WHY**: verify の責務は「観測して真偽を返す」こと。固定 sleep が混ざると①判定の正しさが待ち時間に賭かる（flaky な偽陰性/偽陽性）②操作メソッド末尾と verify 冒頭が同じ描画安定を二重に待つ（待機所有者の分散 = 層責務の崩れ）③1件でも残ると AI が正解パターンとして模倣・増殖する。
 
-コード例（❌verify 内固定待機 / ✅操作メソッドへ集約）と「遷移検証」パターン（`isPresent → action → isAbsent` の対で偽陰性を排除）は **`e2e-test-create/test-data-management.md`「verify は観測のみ」が正本**。
+コード例（❌verify 内固定待機 / ✅操作メソッドへ集約）と「前後検証」パターン（`isPresent → action → isAbsent` の対で偽陰性を排除）は **`e2e-test-create/test-data-management.md`「verify は観測のみ」が正本**。
 
 ### 例外
 
@@ -143,7 +143,7 @@ catch で `false` を返すコード全てが禁止ではない。**catch が何
 代表例: **UI ライブラリの Tabs で中身が空のとき `aria-disabled="true"` になる罠**（Ant Design Tabs / MUI Tabs / Radix UI Tabs 等）。
 詳細は `.claude/skills/e2e-locator/ant-design-tabs-disabled.md` を参照。
 
-事前ガードのコード例（存在検証 → 切替 → 操作 → 消失検証の遷移検証）は **`e2e-test-create/test-data-management.md`「Cleanup フェーズの正直な検証」が正本**。
+事前ガードのコード例（存在検証 → 切替 → 操作 → 消失検証という前後検証）は **`e2e-test-create/test-data-management.md`「Cleanup フェーズの正直な検証」が正本**。
 
 ## AI生成コードの警戒パターン
 
