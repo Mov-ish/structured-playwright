@@ -113,23 +113,23 @@ The canonical source for code examples (❌ fixed wait inside verify / ✅ conso
 
 When the subject of the judgment is itself "a timeout of a state transition," `waitFor({state:'visible'/'hidden'})` + try-catch is allowed (see "Waits Permitted in Page Objects" in `architecture.md`). This is the case where "the observation itself includes a waiting strategy," which is different in kind from a blind fixed wait like `waitForTimeout`.
 
-## No Silent Skipping of Test Conditions (Silent Skip)
+## No Silent Skipping of What the Test Requested (Silent Skip)
 
 If an operation the test explicitly requested cannot be performed, **Fail rather than skip**.
 
 | Situation | Verdict | Reason |
 |------|------|------|
-| `required: true` → checkbox not found | ❌ Must Fail | The test condition is not satisfied |
+| `required: true` → checkbox not found | ❌ Must Fail | The condition the test requested is not satisfied |
 | `submitAnswer()` → submit button not found | ❌ Must Fail | The test operation was not performed |
-| A confirmation modal sometimes appears and sometimes doesn't → it didn't | ✅ Skip allowed | Absorbing environment differences (not a test condition) |
+| A confirmation modal sometimes appears and sometimes doesn't → it didn't | ✅ Skip allowed | Absorbing environment differences (not something the test requested) |
 | The post-logout redirect destination differs by environment | ✅ Skip allowed | Absorbing environment differences |
 
 **Judgment criterion**: is the operation **something the test explicitly requested**, or **defensive code to absorb environment differences**?
 
-- Test conditions (made explicit via arguments/parameters) → **Fail if not found**
+- What the test requested (made explicit via arguments/parameters) → **Fail if not found**
 - Absorbing environment differences (presence of a modal, differing destinations) → **skip allowed**
 
-The canonical source for code examples (❌ silent skip / ✅ throw on required) is **"Fail when a test condition cannot be met" in `e2e-test-create/test-data-management.md`**.
+The canonical source for code examples (❌ silent skip / ✅ throw on required) is **"Fail when what the test requested cannot be met" in `e2e-test-create/test-data-management.md`**.
 
 ## False Positives in the Form of Hangs
 

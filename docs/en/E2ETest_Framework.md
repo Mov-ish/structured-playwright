@@ -73,7 +73,7 @@ Let us be explicit here about why the diagram at the top (§1) does not draw Fix
 
 The greatest enemy of E2E testing is not a test that fails. It is **a test that passes when it must not**. A test that stays green while only its verification has died keeps handing out a reassurance that does not exist, and the later it is discovered, the more it costs.
 
-The boundaries of the 4 layers, and the norms layered on top of them (do not put fixed waits in verification methods; do not swallow errors and return false; do not silently skip when the test's conditions cannot be met), all derive, when pushed to the limit, from one and the same principle:
+The boundaries of the 4 layers, and the norms layered on top of them (do not put fixed waits in verification methods; do not swallow errors and return false; do not silently skip when what the test requested cannot be met), all derive, when pushed to the limit, from one and the same principle:
 
 > **A test's value lies in its ability to fail. Close off, structurally, every path by which it quietly loses that ability.**
 

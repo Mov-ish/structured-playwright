@@ -50,7 +50,7 @@ description: "For E2E test creation. Use when adding tests, implementing Actions
 | **Test** | `new XxxAction(page)` | Fixture argument `async ({ xxxAction }) =>` |
 | **Test** | Locators written directly | Via Action verify methods |
 | **Test** | No header comment | Test procedure document as JSDoc (see `architecture.md`) |
-| **All layers** | Silently skipping when a test condition cannot be met | Fail when an explicitly required operation fails (see `prohibited-patterns.md`) |
+| **All layers** | Silently skipping when what the test requested cannot be met | Fail when an explicitly required operation fails (see `prohibited-patterns.md`) |
 
 ---
 
@@ -246,7 +246,7 @@ async processRequest(itemName: string): Promise<void> {
 
 ## §9. Test Data Management (as the number of tests grows)
 
-**Canonical source = `test-data-management.md` (same directory) — always read it when designing test data, deciding whether to extract a Setup Action, or structuring [Arrange].** Covers: scope design (sharing across multiple `test()` blocks / `beforeAll` / the Setup Action pattern), end-to-end test bloat and consolidating base creation, parameterizing Actions, verify observes only, Fail when test conditions cannot be met (no Silent Skip), and honest verification in the Cleanup phase.
+**Canonical source = `test-data-management.md` (same directory) — always read it when designing test data, deciding whether to extract a Setup Action, or structuring [Arrange].** Covers: scope design (sharing across multiple `test()` blocks / `beforeAll` / the Setup Action pattern), end-to-end test bloat and consolidating base creation, parameterizing Actions, verify observes only, Fail when what the test requested cannot be met (no Silent Skip), and honest verification in the Cleanup phase.
 
 ## §10. Naming Conventions
 

@@ -50,7 +50,7 @@ description: "E2Eテスト作成用。テスト追加・Actions/PageObject実装
 | **Test** | `new XxxAction(page)` | Fixture引数 `async ({ xxxAction }) =>` |
 | **Test** | Locator直接記述 | Action verify メソッド経由 |
 | **Test** | ヘッダーコメントなし | テスト手順書を JSDoc で記載（`architecture.md` 参照） |
-| **全層共通** | テスト条件を満たせない時に黙ってスキップ | 明示的に要求された操作が失敗したら Fail（`prohibited-patterns.md` 参照） |
+| **全層共通** | テストが要求したものを満たせない時に黙ってスキップ | 明示的に要求された操作が失敗したら Fail（`prohibited-patterns.md` 参照） |
 
 ---
 
@@ -246,7 +246,7 @@ async processRequest(itemName: string): Promise<void> {
 
 ## §9. テストデータ管理（テスト増加時に対応）
 
-**正本 = `test-data-management.md`（同ディレクトリ）— テストデータ設計・Setup Action 化の判断・[Arrange] の構造を決めるときに必ず読む。** 収録: スコープ設計（複数 `test()` 間の共有 / `beforeAll` / Setup Action パターン）・通しテストの肥大とベース作成の集約・Action の引数化・verify は観測のみ・テスト条件を満たせない場合は Fail（Silent Skip 禁止）・Cleanup フェーズの正直な検証。
+**正本 = `test-data-management.md`（同ディレクトリ）— テストデータ設計・Setup Action 化の判断・[Arrange] の構造を決めるときに必ず読む。** 収録: スコープ設計（複数 `test()` 間の共有 / `beforeAll` / Setup Action パターン）・通しテストの肥大とベース作成の集約・Action の引数化・verify は観測のみ・テストが要求したものを満たせない場合は Fail（Silent Skip 禁止）・Cleanup フェーズの正直な検証。
 
 ## §10. 命名規則
 

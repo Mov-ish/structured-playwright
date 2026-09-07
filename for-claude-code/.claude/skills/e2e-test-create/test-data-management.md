@@ -165,23 +165,23 @@ await resourceAction.deleteItem();
 expect(await resourceAction.isItemAbsent(title)).toBeTruthy();
 ```
 
-### テスト条件を満たせない場合は Fail（Silent Skip 禁止のコード例）
+### テストが要求したものを満たせない場合は Fail（Silent Skip 禁止のコード例）
 
-テスト条件（引数・パラメータで明示）と環境差異吸収の判定基準は `prohibited-patterns.md`「テスト条件の黙殺禁止」が正本。
+テストが要求したもの（引数・パラメータで明示）と環境差異吸収の判定基準は `prohibited-patterns.md`「テストが要求したものの黙殺禁止」が正本。
 
 ```typescript
-// ❌ 禁止: テスト条件を黙殺
+// ❌ 禁止: テストが要求したものを黙殺
 async checkRequired(): Promise<void> {
   try {
     await this.checkbox.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_CHECK });
   } catch {
-    console.log('見つからないのでスキップ');  // ← テスト条件が満たされず Pass する偽陰性
+    console.log('見つからないのでスキップ');  // ← テストが要求した条件が満たされず Pass する偽陰性
     return;
   }
   await this.checkbox.check();
 }
 
-// ✅ 正しい: テスト条件を満たせなければ Fail
+// ✅ 正しい: テストが要求したものを満たせなければ Fail
 async checkRequired(required: boolean): Promise<void> {
   try {
     await this.checkbox.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_CHECK });
