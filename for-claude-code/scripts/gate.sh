@@ -226,8 +226,8 @@ C16=$(find src -name '*.ts' -not -path '*/config/*' -print0 2>/dev/null | xargs 
 fail_print "waitForTimeout 理由コメントなし" "TIMEOUTS 定数 + 理由コメント（直前のどの操作の何を待つか）を付与" "$C16"
 
 # 17. expect の部分一致（toContain/toContainText/toMatch）で当該行に理由コメントなし
-#     assert は厳密一致（toBe/toEqual）が既定。部分一致は '1' ⊂ '10' 型の偽陰性を生むため
-#     「なぜ厳密一致にできないか」の理由コメント必須（prohibited-patterns.md「値の禁止パターン」。
+#     assert は完全一致（toBe/toEqual）が既定。部分一致は '1' ⊂ '10' 型の偽陰性を生むため
+#     「なぜ完全一致にできないか」の理由コメント必須（prohibited-patterns.md「値の禁止パターン」。
 #     expect は Test 層にのみ書けるため src/tests のみ走査）。
 #     toContainText は Locator 用の別 matcher（expect(locator).toContainText(...)）— 同じ部分一致の
 #     偽陰性を持つため対象に含める（narrow な正規表現は偽の安心 — broad に倒す）
@@ -237,7 +237,7 @@ C17=$(find src/tests -name '*.ts' -print0 2>/dev/null | xargs -0 awk "$AWK_COMME
       print FILENAME ":" FNR ": " $0
   }
 ' 2>/dev/null || true)
-fail_print "expect 部分一致（toContain/toContainText/toMatch）理由コメントなし" "厳密一致（toBe/toEqual）に倒すか理由コメントを付与" "$C17"
+fail_print "expect 部分一致（toContain/toContainText/toMatch）理由コメントなし" "完全一致（toBe/toEqual）に倒すか理由コメントを付与" "$C17"
 
 # 18. describe 内の test.describe.configure()（トップレベル配置が標準 — e2e-test-create §11）
 #     インデントされた configure = describe 内 → その describe にしか効かず、describe 追加時に

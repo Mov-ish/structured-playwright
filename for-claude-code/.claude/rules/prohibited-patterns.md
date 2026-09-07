@@ -76,7 +76,7 @@ ordinal は「偶然を排除する」原則（`locator-principles.md`）の対�
 | 認証情報ハードコード | セキュリティリスク | `.env` + `EnvConfig` | — |
 | `waitForTimeout` の当該行に理由コメントなし | 意図不明で保守不能 | 当該行に「直前のどの操作の何を待つか」を書く（定数名の言い換えは不可）。定数自体の意味は宣言元（constants.ts）に置く（gate が機械検出） | ✓ |
 | `Date.now()` 単独で一意テストデータ名を生成 | 並列ワーカー（別プロセス）が同一 ms で衝突 | `uniqueId()`（下記「一意テストデータ名は uniqueId() で生成する」参照） | ✓ |
-| expect の部分一致（`toContain`/`toContainText`/`toMatch`）に理由コメントなし | `'1'`⊂`'10'` 型の偽陰性 = All green のまま検証だけが死ぬ縮退 | 厳密一致（`toBe`/`toEqual`）を既定に。部分一致は「なぜ厳密一致にできないか」の理由コメント必須 | ✓ |
+| expect の部分一致（`toContain`/`toContainText`/`toMatch`）に理由コメントなし | `'1'`⊂`'10'` 型の偽陰性 = All green のまま検証だけが死ぬ縮退 | 完全一致（`toBe`/`toEqual`）を既定に。部分一致は「なぜ完全一致にできないか」の理由コメント必須 | ✓ |
 
 ## try-catch の許容/禁止の境界
 
