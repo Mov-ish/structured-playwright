@@ -92,7 +92,7 @@ grep -rn "\.catch(() => false)\|\.catch(() => true)" src/
 ### Error handling
 - [ ] No `.catch(() => false)` pattern (see §4)
 
-### Silent skipping of test conditions
+### Silent skipping of what the test requested
 - [ ] Does the test Fail when an operation it explicitly requires (specified via arguments/parameters) cannot be found (skipping and passing is a false negative)
 
 ### Structure of test data preparation (base-creation flow bloat / imitation propagation)

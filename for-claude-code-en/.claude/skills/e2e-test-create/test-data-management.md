@@ -165,23 +165,23 @@ await resourceAction.deleteItem();
 expect(await resourceAction.isItemAbsent(title)).toBeTruthy();
 ```
 
-### Fail when test conditions cannot be met (code example of the Silent Skip prohibition)
+### Fail when what the test requested cannot be met (code example of the Silent Skip prohibition)
 
-The canonical criteria for test conditions (explicit via arguments/parameters) vs. absorbing environment variance are in `prohibited-patterns.md` "No silent skipping of test conditions".
+The canonical criteria for what the test requested (explicit via arguments/parameters) vs. absorbing environment variance are in `prohibited-patterns.md` "No silent skipping of what the test requested".
 
 ```typescript
-// ❌ Prohibited: silently swallowing the test condition
+// ❌ Prohibited: silently swallowing what the test requested
 async checkRequired(): Promise<void> {
   try {
     await this.checkbox.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_CHECK });
   } catch {
-    console.log('Not found, skipping');  // ← passes without the test condition being met — a false negative
+    console.log('Not found, skipping');  // ← passes without the condition the test requested being met — a false negative
     return;
   }
   await this.checkbox.check();
 }
 
-// ✅ Correct: Fail when the test condition cannot be met
+// ✅ Correct: Fail when what the test requested cannot be met
 async checkRequired(required: boolean): Promise<void> {
   try {
     await this.checkbox.waitFor({ state: 'visible', timeout: TIMEOUTS.ELEMENT_CHECK });
