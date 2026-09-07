@@ -244,9 +244,9 @@ C16=$(find src -name '*.ts' -not -path '*/config/*' -print0 2>/dev/null | xargs 
 fail_print "waitForTimeout without reason comment" "use a TIMEOUTS constant + a reason comment (which preceding operation this waits for, and what about it)" "$C16"
 
 # 17. Partial-match expect (toContain/toContainText/toMatch) with no reason comment on that line
-#     Strict equality (toBe/toEqual) is the default for asserts. Partial matching
+#     Exact matching (toBe/toEqual) is the default for asserts. Partial matching
 #     produces '1' ⊂ '10'-style false negatives, so a reason comment explaining
-#     "why strict equality is not possible" is required (prohibited-patterns.md
+#     "why exact matching is not possible" is required (prohibited-patterns.md
 #     "Prohibited value patterns". expect may only be written in the Test layer,
 #     so only src/tests is scanned).
 #     toContainText is a separate Locator matcher (expect(locator).toContainText(...)) —
@@ -258,7 +258,7 @@ C17=$(find src/tests -name '*.ts' -print0 2>/dev/null | xargs -0 awk "$AWK_COMME
       print FILENAME ":" FNR ": " $0
   }
 ' 2>/dev/null || true)
-fail_print "partial-match expect (toContain/toContainText/toMatch) without reason comment" "switch to strict equality (toBe/toEqual) or add a reason comment" "$C17"
+fail_print "partial-match expect (toContain/toContainText/toMatch) without reason comment" "switch to exact matching (toBe/toEqual) or add a reason comment" "$C17"
 
 # 18. test.describe.configure() inside a describe (top-level placement is the standard — e2e-test-create §11)
 #     An indented configure = inside a describe → it only affects that describe,
