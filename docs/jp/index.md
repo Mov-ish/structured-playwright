@@ -31,6 +31,7 @@ English version: [`docs/en/`](../en/index.md)
 
 - [Structured Playwright (1) —— 継続性から設計するE2Eテストの4層構造とハーネス](https://zenn.dev/mov_ish/articles/structured-playwright-e2e) — 総論。E2E テストの 3 つの末路（壊れやすい / 太る / 捨てられる）と、4 層で変更の届く範囲を設計する話（[`E2ETest_Framework.md`](./E2ETest_Framework.md) に対応）
 - [Structured Playwright (2) —— 変更に強いLocatorの設計](https://zenn.dev/mov_ish/articles/structured-playwright-locator) — Locator の優先順位ピラミッドと、ordinal セレクタの A/B/C 分類（[`LOCATOR/locator_strategy.md`](./LOCATOR/locator_strategy.md) に対応）
+- [Structured Playwright (3) —— Passと報告されるFailを構造で止める](https://zenn.dev/mov_ish/articles/structured-playwright-false-positive) — Pass と報告される Fail の 5 つの入口と、規範 / 構造 / gate / ログ / 人のどこで止めているか（[`prohibited-patterns.md`](../../for-claude-code/.claude/rules/prohibited-patterns.md) に対応）
 - [「リグレッションベース」——スプリントを重ねても破綻しないテスト管理の考え方](https://zenn.dev/mov_ish/articles/regression-base-concept) — 前提となるテスト管理の考え方。このリポジトリより前の層の話
 
 連載は不定期で継続中。この一覧は更新が遅れることがあるので、最新は [zenn.dev/mov_ish](https://zenn.dev/mov_ish) を見ること。
