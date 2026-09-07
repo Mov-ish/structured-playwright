@@ -31,6 +31,7 @@ The thinking behind this repository is written up as an ongoing series on Zenn (
 
 - [Structured Playwright (1) —— 継続性から設計するE2Eテストの4層構造とハーネス](https://zenn.dev/mov_ish/articles/structured-playwright-e2e) — the overview: the three ways E2E suites die (fragile / bloated / abandoned), and how the 4 layers bound the reach of a change
 - [Structured Playwright (2) —— 変更に強いLocatorの設計](https://zenn.dev/mov_ish/articles/structured-playwright-locator) — the Locator priority pyramid and the A/B/C classification of ordinal selectors
+- [Structured Playwright (3) —— Passと報告されるFailを構造で止める](https://zenn.dev/mov_ish/articles/structured-playwright-false-positive) — the five ways a failing test gets reported as a pass, and where each one is stopped: norms, structure, the gate, the logs, and people
 - [「リグレッションベース」——スプリントを重ねても破綻しないテスト管理の考え方](https://zenn.dev/mov_ish/articles/regression-base-concept) — background: the test-management idea this architecture assumes
 
 The series is ongoing — the current list is at [zenn.dev/mov_ish](https://zenn.dev/mov_ish).
@@ -90,6 +91,7 @@ If this template helps your project, a mention in your README or blog — or a s
 
 - [Structured Playwright (1) —— 継続性から設計するE2Eテストの4層構造とハーネス](https://zenn.dev/mov_ish/articles/structured-playwright-e2e) — 総論。E2E テストの 3 つの末路（壊れやすい / 太る / 捨てられる）と、4 層で変更の届く範囲を設計する話
 - [Structured Playwright (2) —— 変更に強いLocatorの設計](https://zenn.dev/mov_ish/articles/structured-playwright-locator) — Locator の優先順位ピラミッドと、ordinal セレクタの A/B/C 分類
+- [Structured Playwright (3) —— Passと報告されるFailを構造で止める](https://zenn.dev/mov_ish/articles/structured-playwright-false-positive) — Pass と報告される Fail の 5 つの入口と、規範 / 構造 / gate / ログ / 人のどこで止めているか
 - [「リグレッションベース」——スプリントを重ねても破綻しないテスト管理の考え方](https://zenn.dev/mov_ish/articles/regression-base-concept) — 前提となるテスト管理の考え方（このリポジトリより前の話）
 
 連載は不定期で継続中です。最新の一覧は [zenn.dev/mov_ish](https://zenn.dev/mov_ish) にあります。
