@@ -16,24 +16,14 @@ Therefore:
   it holds a "condition that will hold in the future," with lazy evaluation, auto-waiting, and auto-retry built in.
   → `waitFor()` (future-value evaluation) is often more appropriate than `isVisible()` (immediate evaluation).
 
-The two principles below are the philosophy for designing Locators on top of this premise.
+## The 4 Universal Principles — What Each Prevents and How to Practice It
 
-**1. It should be operated on a semantic basis**
-Capture elements by meaning (role, name, label, text), not structure (nested divs). The meaning of a UI rarely changes, but its structure changes frequently.
-→ XPath is prohibited (the gate exits 1 on check 2). CSS structural selectors are a last resort only, requiring a comment + TODO.
-
-**2. Narrow the search scope**
-The whole page is too large a search range. Scoping to a semantic unit — modal, row, card, etc. — improves uniqueness, resilience to DOM changes, and clarity of intent. Playwright's own docs cover this under "Matching inside a locator" — chaining locators to narrow the search.
-→ Prefer `modal.locator()` or `row.locator()` over unscoped `page.locator()`.
-
-## The 4 Universal Principles — What Each Prevents
-
-| Principle | What it prevents |
-|------|---------|
-| **Capture meaning (Semantic Priority)** | Locator collapse on UI changes. Meaning is the layer least likely to change |
-| **Narrow the search scope (Search Scope)** | Mis-hits on identical text. The case where "Save" exists twice: in the background and in a modal |
-| **Eliminate coincidence (Deterministic)** | Sudden breakage from ordinal selectors (`.first()`/`.last()`/`.nth()`) when the UI is reordered or elements are added |
-| **Do not depend on structure (Anti-XPath)** | All Locators collapsing just because the UI library added one div |
+| Principle | What it prevents | In practice |
+|------|---------|------|
+| **Capture meaning (Semantic Priority)** | Locator collapse on UI changes. Meaning is the layer least likely to change | Capture by role / name / label / text (structure changes frequently) |
+| **Narrow the search scope (Search Scope)** | Mis-hits on identical text. The case where "Save" exists twice: in the background and in a modal | Prefer `modal.locator()` or `row.locator()` over unscoped `page.locator()` (Playwright docs: "Matching inside a locator") |
+| **Eliminate coincidence (Deterministic)** | Sudden breakage from ordinal selectors (`.first()`/`.last()`/`.nth()`) when the UI is reordered or elements are added | First make it unique with a search scope or `:near()` (see "Code of Conduct for AI Generation" item 1 below) |
+| **Do not depend on structure (Anti-XPath)** | All Locators collapsing just because the UI library added one div | XPath is prohibited (the gate exits 1 on check 2). CSS structural selectors are a last resort only, requiring a comment + TODO |
 
 ## Priority Pyramid (always consider in this order)
 
