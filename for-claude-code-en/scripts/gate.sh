@@ -391,7 +391,7 @@ if [ -d .claude/rules ]; then
   fi
 
   # 22. Health of cross-skill references (violations = ① §N references into other
-  #     SKILL.md files ② bare sub-file names ③ broken links)
+  #     SKILL.md files or into rules ② bare sub-file names ③ broken links)
   #     The harmful axis is "load-unit granularity and sync burden":
   #       ◎ full-path reference to a sub-file (cross-dir OK) — loads only the
   #         independent unit you need. Paths are more stable than § numbers, and
@@ -425,8 +425,14 @@ if [ -d .claude/rules ]; then
           [ "$tgt" != "$d" ] && echo "${f#.claude/skills/}:${ln}: ${m}"
         done
       #   §N references into rules (rules are not skills, so there is no own-dir exemption)
-      [ -n "$RULES_ALT" ] && grep -noE "(${RULES_ALT})(\.md)?\`?[[:space:]]*§[0-9]+" "$f" 2>/dev/null |
-        while IFS=: read -r ln m; do echo "${f#.claude/skills/}:${ln}: ${m} (§N reference into rules — refer by section name)"; done
+      #   The left boundary (so my-locator-principles.md does not match) is an ASCII class —
+      #   [:alnum:] includes Japanese characters under UTF-8 locales and would miss
+      #   "詳細はlocator-principles.md §1"
+      [ -n "$RULES_ALT" ] && grep -noE "(^|[^A-Za-z0-9_-])(${RULES_ALT})(\.md)?\`?[[:space:]]*§[0-9]+" "$f" 2>/dev/null |
+        while IFS=: read -r ln m; do
+          m=${m#"${m%%[A-Za-z0-9_-]*}"}  # drop the boundary character (may be multibyte)
+          echo "${f#.claude/skills/}:${ln}: ${m} (§N reference into rules — refer by section name)"
+        done
 
       # ② bare sub-file names (cross-dir references missing the dir prefix).
       #    A preceding `/` means a full-path reference (allowed; ③ verifies
