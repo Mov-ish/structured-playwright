@@ -53,21 +53,28 @@ CASE2_ROWS=(
   'my-locator-principles.md §3|-'                                 # 名前が rules 名で終わる別名
   '`locator-principles.md` の §4|locator-principles.md` の §4'
   'locator-principles.md（§5）|locator-principles.md（§5'
+  'locator-principles.md (§6)|locator-principles.md (§6'
   # 他 SKILL.md への §N 参照
   '`e2e-review` の §3|e2e-review` の §3'
   'e2e-reviewの§3|e2e-reviewの§3'
   'e2e-review（§3）|e2e-review（§3'
   'e2e-review/SKILL.md §3|e2e-review/SKILL.md §3'
   '`e2e-review` § 3|e2e-review` § 3'
+  'e2e-review (§3)|e2e-review (§3'
+  'e2e-review（ §3）|e2e-review（ §3'
   # 自 dir（e2e-locator）への §N 参照は許容
   'e2e-locator（§2）|-'
   'e2e-locator§2|-'
   '`e2e-locator` の §2|-'
   'e2e-locator/SKILL.md §2|-'
+  'e2e-locator (§2)|-'
   # 裸のサブファイル名（日本語の直後）
   '詳細はtest-data-management.md を参照|test-data-management.md'
 )
 target=".claude/skills/e2e-locator/ant-design-tabs-disabled.md"
+# C.UTF-8 が無い環境では bash が黙って C ロケールで動き、UTF-8 側の検査が修正前の gate でも ✅ になる
+printf 'あ\n' | LC_ALL=C.UTF-8 grep -qE '^[[:alnum:]]$' 2>/dev/null \
+  || fail "ケース2: LC_ALL=C.UTF-8 が使えない（UTF-8 ロケールでの検査が成立しない）"
 for kit in "${KITS[@]}"; do
   dst="$WORK/$kit"
   mkdir -p "$dst"

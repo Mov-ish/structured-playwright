@@ -408,11 +408,13 @@ if [ -d .claude/rules ]; then
   #     at the reference target" is in fact the standard shape.
   #     skills → rules §N references are detected by ① (§ numbers shift silently when
   #     sections change; refer by section name). Rules names come from .claude/rules/
+  #     (so the check follows when an adopter adds rules)
   RULES_ALT=$(find .claude/rules -maxdepth 1 -name '*.md' -exec basename {} .md \; 2>/dev/null | sort | paste -sd'|' -)
-  #     Allowed between the name and §N in ①: a backtick, whitespace, "の", "（", and
-  #     whitespace between § and the number. Enumerated on purpose (a looser "§ near the
-  #     name" would pick up a § from another sentence)
-  REF_SEP="\`?[[:space:]]*(の[[:space:]]*|（)?§[[:space:]]*[0-9]+"
+  #     Allowed between the name and §N in ①: a backtick, whitespace, "の", a full- or
+  #     half-width parenthesis, and whitespace between § and the number. Enumerated on purpose
+  #     (a looser "§ near the name" would pick up a § from another sentence). Parentheses are
+  #     alternatives, not a character class (the C locale splits full-width chars into bytes)
+  REF_SEP="\`?[[:space:]]*(の[[:space:]]*|（[[:space:]]*|\([[:space:]]*)?§[[:space:]]*[0-9]+"
   C22=$({
     for f in .claude/skills/*/*.md; do
       [ -e "$f" ] || continue
