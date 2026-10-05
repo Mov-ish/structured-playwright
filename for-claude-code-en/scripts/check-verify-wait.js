@@ -69,7 +69,9 @@ const TARGET_DIRS = ['src/pages', 'src/actions'];
 function collectTsFiles(dir, acc) {
   if (!fs.existsSync(dir)) return acc;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, entry.name);
+    // path.join returns `\`-separated paths on Windows, so file:line output would read `src\pages\Foo.ts`
+    // (not clickable in editors, and it never matches expected.txt). fs resolves `/` on Windows too, so pin to posix
+    const p = path.posix.join(dir, entry.name);
     if (entry.isDirectory()) collectTsFiles(p, acc);
     else if (entry.isFile() && p.endsWith('.ts')) acc.push(p);
   }

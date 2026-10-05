@@ -53,7 +53,9 @@ const TARGET_DIRS = ['src/pages', 'src/actions'];
 function collectTsFiles(dir, acc) {
   if (!fs.existsSync(dir)) return acc;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, entry.name);
+    // path.join は Windows で `\` 区切りを返し、出力の file:line がそのまま `src\pages\Foo.ts` になる
+    // （エディタで飛べない・expected.txt と一致しない）。fs は `/` 区切りでも解決できるので posix に固定する
+    const p = path.posix.join(dir, entry.name);
     if (entry.isDirectory()) collectTsFiles(p, acc);
     else if (entry.isFile() && p.endsWith('.ts')) acc.push(p);
   }
