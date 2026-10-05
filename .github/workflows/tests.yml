@@ -25,3 +25,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: bash tests/check-lang-parity.test.sh
+
+  check-meta-layer:
+    name: メタ層チェック（gate.sh 22・23・W6・W7 をキット自身に）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tests/check-meta-layer.test.sh
