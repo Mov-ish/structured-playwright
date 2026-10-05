@@ -350,7 +350,7 @@ if [ -d .claude/rules ]; then
     echo "✅ Rules 常時ロード総量: ${RULES_TOTAL}B / ${RULES_BASELINE}B（残 $((RULES_BASELINE - RULES_TOTAL))B）"
   fi
 
-  # 22. Skill 間参照の健全性（違反 = ①他 SKILL.md への §N 参照 ②裸のサブファイル名 ③リンク切れ）
+  # 22. Skill 間参照の健全性（違反 = ①他 SKILL.md・rules への §N 参照 ②裸のサブファイル名 ③リンク切れ）
   #     有害軸は「ロード単位の粒度と同期負荷」:
   #       ◎ サブファイルへのフルパス参照（dir 跨ぎ可）— 必要な独立単位だけ読める。
   #         パスは § 番号より安定し、実在を ③ で機械検証できる
@@ -378,8 +378,13 @@ if [ -d .claude/rules ]; then
           [ "$tgt" != "$d" ] && echo "${f#.claude/skills/}:${ln}: ${m}"
         done
       #   rules への §N 参照（rules は skill ではないので自 dir の除外はない）
-      [ -n "$RULES_ALT" ] && grep -noE "(${RULES_ALT})(\.md)?\`?[[:space:]]*§[0-9]+" "$f" 2>/dev/null |
-        while IFS=: read -r ln m; do echo "${f#.claude/skills/}:${ln}: ${m}（rules への §N 参照 — 節名で参照する）"; done
+      #   左境界（my-locator-principles.md を拾わない）は ASCII クラスで書く — [:alnum:] は UTF-8
+      #   ロケールで日本語の文字を含み、「詳細はlocator-principles.md §1」を取りこぼす
+      [ -n "$RULES_ALT" ] && grep -noE "(^|[^A-Za-z0-9_-])(${RULES_ALT})(\.md)?\`?[[:space:]]*§[0-9]+" "$f" 2>/dev/null |
+        while IFS=: read -r ln m; do
+          m=${m#"${m%%[A-Za-z0-9_-]*}"}  # 境界の1文字（マルチバイト可）を落とす
+          echo "${f#.claude/skills/}:${ln}: ${m}（rules への §N 参照 — 節名で参照する）"
+        done
 
       # ② 裸のサブファイル名（dir 接頭辞がない dir 跨ぎ参照）。
       #    直前が `/` はフルパス参照（許容。実在は ③ が検証）なので除外する
