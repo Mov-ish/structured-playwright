@@ -16,24 +16,14 @@ Locator は CSS query (関数) を保持しているだけで element reference 
   遅延評価・自動待機・自動リトライを内包した「未来に成立する条件式」を持つ。
   → `isVisible()`（即時評価）より `waitFor()`（未来値評価）が適切な場面が多い。
 
-以下の 2 原則は、この前提を踏まえた上で Locator を設計するための思想。
+## 4つの普遍原則 — 各原則が防ぐものと実践
 
-**1. 意味ベースで操作されるべき**
-構造（divの入れ子）ではなく意味（role, name, label, text）で要素を捉える。UIの意味は変更されにくいが、構造は頻繁に変わる。
-→ XPath は禁止（gate がチェック2で exit 1）。CSS構造セレクタは最終手段のみで、コメント + TODO 必須。
-
-**2. 探索スコープを絞る**
-ページ全体は探索範囲として大きすぎる。モーダル・行・カード等の意味単位で括ると、一意性向上・DOM変更に強い・意図が明確。Playwright 公式ドキュメントの "Matching inside a locator"（Locator を連鎖させて探索範囲を絞る）がこれにあたる。
-→ スコープなし`page.locator()`より`modal.locator()`や`row.locator()`。
-
-## 4つの普遍原則 — 各原則が防ぐもの
-
-| 原則 | 防ぐもの |
-|------|---------|
-| **意味を捉える（Semantic Priority）** | UI変更時のLocator崩壊。意味は最も変更されにくい層 |
-| **探索スコープを絞る（Search Scope）** | 同一文言の誤爆。「保存」が背景とモーダルに2つある場面 |
-| **偶然を排除する（Deterministic）** | ordinal セレクタ（`.first()`/`.last()`/`.nth()`）によるUI並び替え・要素追加時の突然の破壊 |
-| **構造に依存しない（Anti-XPath）** | UIライブラリがdiv1つ追加しただけでの全Locator崩壊 |
+| 原則 | 防ぐもの | 実践 |
+|------|---------|------|
+| **意味を捉える（Semantic Priority）** | UI変更時のLocator崩壊。意味は最も変更されにくい層 | role / name / label / text で捉える（構造は頻繁に変わる） |
+| **探索スコープを絞る（Search Scope）** | 同一文言の誤爆。「保存」が背景とモーダルに2つある場面 | スコープなし`page.locator()`より`modal.locator()`や`row.locator()`（Playwright 公式 "Matching inside a locator"） |
+| **偶然を排除する（Deterministic）** | ordinal セレクタ（`.first()`/`.last()`/`.nth()`）によるUI並び替え・要素追加時の突然の破壊 | まず探索スコープ・`:near()` で一意にする（後述「AI生成時の行動規範」1） |
+| **構造に依存しない（Anti-XPath）** | UIライブラリがdiv1つ追加しただけでの全Locator崩壊 | XPath は禁止（gate がチェック2で exit 1）。CSS構造セレクタは最終手段のみで、コメント + TODO 必須 |
 
 ## 優先順位ピラミッド（常にこの順で検討する）
 
