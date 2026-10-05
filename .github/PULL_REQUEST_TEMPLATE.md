@@ -21,6 +21,7 @@ CONTRIBUTING.md も併せて参照してください。
 - [ ] 見出しの追加・削除・構成変更をした場合、両側の見出しレベル列が一致している
 - [ ] `bash tests/check-lang-parity.test.sh` が通る
 - [ ] `bash tests/check-verify-wait.test.sh` が通る（`scripts/` を触った場合は必須）
+- [ ] `bash tests/check-meta-layer.test.sh` が通る（`.claude/` か `scripts/gate.sh` を触った場合は必須）
 - [ ] 改行は LF（CRLF を混ぜていない）
 
 ## gate のチェックを変更した場合

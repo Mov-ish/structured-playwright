@@ -47,9 +47,10 @@ Changes to a check must be made in **both** `for-claude-code/` and `for-claude-c
 ```bash
 bash tests/check-lang-parity.test.sh
 bash tests/check-verify-wait.test.sh   # installs typescript@5 into a temp dir — needs network
+bash tests/check-meta-layer.test.sh    # runs gate.sh checks 22, 23, W6 and W7 against the kit itself
 ```
 
-Both run in CI on every pull request.
+All three run in CI on every pull request.
 
 ### Style
 
@@ -100,9 +101,10 @@ Match what is already there. In particular, comments in the kit explain **why**,
 ```bash
 bash tests/check-lang-parity.test.sh
 bash tests/check-verify-wait.test.sh   # typescript@5 を一時ディレクトリに入れるためネットワークが必要
+bash tests/check-meta-layer.test.sh    # gate.sh のチェック 22・23・W6・W7 をキット自身に走らせる
 ```
 
-どちらも PR ごとに CI で走ります。
+3本とも PR ごとに CI で走ります。
 
 ### 書き方
 

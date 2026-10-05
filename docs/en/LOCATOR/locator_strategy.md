@@ -14,7 +14,7 @@ It is organized from three perspectives:
 
 ## 0. The Role of Concept
 
-The Playwright API defines what you can do with a Locator. It does not define which Locator to write — the same element can be reached many ways. That choice sits outside the API, and it is what **Concept (the canon set out in this document)** governs.
+The Playwright API defines what you can do with a Locator. It does not define which Locator to write — the same element can be reached many ways. That choice sits outside the API, and it is what **this document** governs.
 
 That is because the Locator affects everything:
 
@@ -26,7 +26,7 @@ That is because the Locator affects everything:
 
 It is the "core structure" whose influence reaches all of them.
 
-Concept unifies **not "how to write" but "why to write it that way,"** prescribing from outside the 4-layer architecture which layers may write Locators.
+This document unifies **not "how to write" but "why to write it that way,"** prescribing from outside the 4-layer architecture which layers may write Locators.
 
 ---
 
@@ -346,12 +346,12 @@ An AI that can articulate its reasons is highly reproducible — and does not mi
 
 ---
 
-## 7. Connection to the 4-Layer Architecture (Where Concept Sits)
+## 7. Connection to the 4-Layer Architecture (Where This Document Sits)
 
-Concept is not one of the four layers. It is the **canon that prescribes, from outside the layers, how Locators are written**.
+**This document** is not one of the four layers. It is the **canon that prescribes, from outside the layers, how Locators are written**.
 
 ```
-     Concept (the canon in this document)
+     This document (Locator Strategy)
      Locator philosophy, priorities, prohibitions
               │ prescribes
               ▼
@@ -782,7 +782,7 @@ This connects directly to the 4-layer architecture:
 - **Layer 1 (Page Objects)**: where Locators are concretely implemented
 - **Layer 2 (Actions) / Layer 3 (Tests)**: the layers that must never touch Locators directly
 - **Layer 4 (Config/Env)**: the canonical home of shared selectors (`SELECTORS.MODAL` etc.), read by Page Objects
-- **Concept (the canon in this document)**: the Locator philosophy and its prohibitions, prescribed from outside the layers
+- **This document (Locator Strategy)**: the Locator philosophy and its prohibitions, prescribed from outside the layers
 
 An E2E developer understands the "philosophy" of this document and practices it in the Page Object layer.
 

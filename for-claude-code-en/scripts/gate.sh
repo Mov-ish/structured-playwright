@@ -4,6 +4,9 @@
 # patterns that can be mechanized with grep / AST
 #
 # Usage: run `npm run gate` at the project root (the directory containing src/)
+#   GATE_SCOPE=kit — self-check of the kit itself (a template with no src/). Runs only
+#   checks 22, 23, W6 and W7 among the meta-layer checks that read .claude/ (used by the
+#   repository's tests/check-meta-layer.test.sh; adopters have no need for it)
 #
 # Design:
 # - grep patterns are broad (narrow patterns create false reassurance)
@@ -35,7 +38,13 @@ set -u
 # cwd guard: running where src/ does not exist makes every grep miss and prints
 # a row of "false ✅", so fail immediately
 # (never display "zero violations" and "the search target does not exist" as the same ✅)
-[ -d src ] || { echo "❌ src/ not found. Run npm run gate at the project root"; exit 1; }
+# GATE_SCOPE=kit skips every src/-dependent check, so it guards on .claude/rules instead
+GATE_SCOPE=${GATE_SCOPE:-all}
+case "$GATE_SCOPE" in
+  all) [ -d src ] || { echo "❌ src/ not found. Run npm run gate at the project root"; exit 1; } ;;
+  kit) [ -d .claude/rules ] || { echo "❌ .claude/rules not found. Run GATE_SCOPE=kit at the kit root (for-claude-code-en/)"; exit 1; } ;;
+  *)   echo "❌ GATE_SCOPE=${GATE_SCOPE} is not defined (all / kit)"; exit 1 ;;
+esac
 
 # Resolve companion scripts (check-verify-wait.js etc.) relative to gate.sh itself
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -107,6 +116,11 @@ warn_print() {
 }
 
 echo "━━ gate: prohibited pattern detection ($(basename "$PWD")) ━━"
+
+# ▼ src/-dependent checks (1–20). Skipped entirely under GATE_SCOPE=kit
+#   The body is not re-indented — an indentation-only diff of this size would bury
+#   the change history of the checks themselves
+if [ "$GATE_SCOPE" = all ]; then
 
 # 1. text= syntax (does not work in Playwright)
 check "text= syntax" "use :has-text() / getByRole" \
@@ -309,6 +323,8 @@ C20=$(find src/config -name '*.ts' -print0 2>/dev/null | xargs -0 awk "$AWK_COMM
 ' 2>/dev/null || true)
 fail_print "numeric constant without declaration-site comment (config/)" "state \"what duration this is\" on the declaration line (add the rationale for the value if you have one)" "$C20"
 
+fi # ▲ end of src/-dependent checks (1–20)
+
 echo "── Meta layer (health of .claude/) ──"
 
 if [ -d .claude/rules ]; then
@@ -347,10 +363,17 @@ if [ -d .claude/rules ]; then
   #       guaranteed to become a review topic. That is the real substance of this
   #       check; there is no separate exception-request flow (more mechanism means
   #       more dead letter).
+  #     ★ Not judged under GATE_SCOPE=kit. The kit by design ships no baseline (freezing
+  #       is the adopter's human task), and the kit's author is the very party deciding
+  #       the volume of norms — inventing a kit baseline would collide with the idea of
+  #       this check. Changes are stated with measured values in the body of any PR that
+  #       touches rules.
   BASELINE_FILE=".claude/rules-baseline"
   RULES_BASELINE=$(grep -oE '[0-9]+' "$BASELINE_FILE" 2>/dev/null | head -1 || true)
   RULES_TOTAL=$(find .claude/rules -name '*.md' -exec cat {} + 2>/dev/null | wc -c | tr -d ' ')
-  if [ -z "$RULES_BASELINE" ]; then
+  if [ "$GATE_SCOPE" = kit ]; then
+    echo "➖ Total always-loaded rules volume: ${RULES_TOTAL}B (not judged under GATE_SCOPE=kit — the kit ships no baseline)"
+  elif [ -z "$RULES_BASELINE" ]; then
     BASELINE_MSG="initial setup: create ${BASELINE_FILE} with the current measured value and freeze it (run as a human: echo ${RULES_TOTAL} > ${BASELINE_FILE}. AI agents must not create it — see the ★ comments in gate.sh)"
     if [ "${GATE_CALLER:-}" = "stop-hook" ]; then
       echo "⚠️  Total always-loaded rules volume: baseline not set (${BASELINE_MSG})"
@@ -368,7 +391,7 @@ if [ -d .claude/rules ]; then
   fi
 
   # 22. Health of cross-skill references (violations = ① §N references into other
-  #     SKILL.md files ② bare sub-file names ③ broken links)
+  #     SKILL.md files or into rules ② bare sub-file names ③ broken links)
   #     The harmful axis is "load-unit granularity and sync burden":
   #       ◎ full-path reference to a sub-file (cross-dir OK) — loads only the
   #         independent unit you need. Paths are more stable than § numbers, and
@@ -383,6 +406,13 @@ if [ -d .claude/rules ]; then
   #     rules → skills references are also out of scope — rules are always loaded
   #     and skills are phase-loaded, so the two-tier "principles in rules, details
   #     at the reference target" is in fact the standard shape.
+  #     The opposite direction, skills → rules §N references (the `locator-principles.md §1`
+  #     form), is detected by ①. Rules are already loaded, so load granularity is not the
+  #     issue, but § numbers shift silently all the same (in #31 a numbered-list item was
+  #     removed and the reference turned into a different principle). Refer by section name.
+  #     The rules names are built from the actual files in .claude/rules/ (so the check
+  #     follows when an adopter adds rules)
+  RULES_ALT=$(find .claude/rules -maxdepth 1 -name '*.md' -exec basename {} .md \; 2>/dev/null | sort | paste -sd'|' -)
   C22=$({
     for f in .claude/skills/*/*.md; do
       [ -e "$f" ] || continue
@@ -393,6 +423,15 @@ if [ -d .claude/rules ]; then
         while IFS=: read -r ln m; do
           tgt=${m%%[\`/ ]*}
           [ "$tgt" != "$d" ] && echo "${f#.claude/skills/}:${ln}: ${m}"
+        done
+      #   §N references into rules (rules are not skills, so there is no own-dir exemption)
+      #   The left boundary (so my-locator-principles.md does not match) is an ASCII class —
+      #   [:alnum:] includes Japanese characters under UTF-8 locales and would miss
+      #   "詳細はlocator-principles.md §1"
+      [ -n "$RULES_ALT" ] && grep -noE "(^|[^A-Za-z0-9_-])(${RULES_ALT})(\.md)?\`?[[:space:]]*§[0-9]+" "$f" 2>/dev/null |
+        while IFS=: read -r ln m; do
+          m=${m#"${m%%[A-Za-z0-9_-]*}"}  # drop the boundary character (may be multibyte)
+          echo "${f#.claude/skills/}:${ln}: ${m} (§N reference into rules — refer by section name)"
         done
 
       # ② bare sub-file names (cross-dir references missing the dir prefix).
@@ -417,7 +456,7 @@ if [ -d .claude/rules ]; then
   #   violations coexist on one line (e.g. a §N reference next to a broken link),
   #   both are shown (a sort -u keyed on file:line would hide one of them)
   } 2>/dev/null | sort -t: -k1,1 -k2,2n | uniq || true)
-  fail_print "cross-skill reference violations (§N cross-reference / bare reference / broken link)" "extract the shared canonical content into a sub-file and reference it by full path (full-path references to sub-files are allowed even across dirs)" "$C22"
+  fail_print "cross-skill reference violations (§N cross-reference / bare reference / broken link)" "extract the shared canonical content into a sub-file and reference it by full path (full-path references to sub-files are allowed even across dirs); refer to rules by section name, not §N" "$C22"
 
   # 23. Size of a single SKILL.md (❌ when exceeding 20,480B)
   #     The threshold being identical to W6 (single rules file) is a requirement —
@@ -468,6 +507,9 @@ else
   WARN=1
 fi
 
+# ▼ src/-dependent warnings and tsc. Skipped entirely under GATE_SCOPE=kit (not re-indented, same reason as 1–20)
+if [ "$GATE_SCOPE" = all ]; then
+
 echo "── Warnings (visual review required — do not affect the exit code) ──"
 
 # W1. waitForTimeout in Page Objects
@@ -510,6 +552,8 @@ else
   echo "❌ tsc → resolve the type errors (including unused imports / variables)"
   FAIL=1
 fi
+
+fi # ▲ end of src/-dependent warnings and tsc
 
 echo "━━ Result ━━"
 if [ "$FAIL" -eq 1 ]; then

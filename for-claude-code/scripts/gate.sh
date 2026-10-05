@@ -3,6 +3,9 @@
 # 機械ゲート — grep / AST で機械化できる禁止パターンの機械検出の正本
 #
 # 使い方: プロジェクトルート（src/ があるディレクトリ）で `npm run gate`
+#   GATE_SCOPE=kit — キット自身（src/ を持たない雛形）の自己検査。.claude/ を読むメタ層の
+#   チェックのうち 22・23・W6・W7 だけを走らせる（リポジトリの tests/check-meta-layer.test.sh 用。
+#   導入先で使う必要はない）
 #
 # 設計:
 # - grep は broad パターン（narrow は偽の安心を生む）
@@ -29,7 +32,13 @@ set -u
 
 # cwd ガード: src/ が無い場所で実行すると grep が空振りして「偽 ✅」が並ぶため即 fail
 # （「違反ゼロ」と「検索対象が存在しない」を同じ ✅ で表示しない）
-[ -d src ] || { echo "❌ src/ が見つかりません。プロジェクトルートで npm run gate を実行してください"; exit 1; }
+# GATE_SCOPE=kit は src/ 依存のチェックを丸ごと飛ばすので、ガード対象を .claude/rules に替える
+GATE_SCOPE=${GATE_SCOPE:-all}
+case "$GATE_SCOPE" in
+  all) [ -d src ] || { echo "❌ src/ が見つかりません。プロジェクトルートで npm run gate を実行してください"; exit 1; } ;;
+  kit) [ -d .claude/rules ] || { echo "❌ .claude/rules が見つかりません。GATE_SCOPE=kit はキットのルート（for-claude-code/）で実行してください"; exit 1; } ;;
+  *)   echo "❌ GATE_SCOPE=${GATE_SCOPE} は未定義です（all / kit）"; exit 1 ;;
+esac
 
 # 付属スクリプト（check-verify-wait.js 等）を gate.sh 自身の場所から解決する
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -99,6 +108,10 @@ warn_print() {
 }
 
 echo "━━ gate: 禁止パターン検出（$(basename "$PWD")） ━━"
+
+# ▼ src/ 依存のチェック（1〜20）。GATE_SCOPE=kit では丸ごと飛ばす
+#   本文はインデントしない — 字下げだけの巨大 diff でチェック本体の変更履歴を埋めないため
+if [ "$GATE_SCOPE" = all ]; then
 
 # 1. text= 記法（Playwright で動作しない）
 check "text= 記法" ":has-text() / getByRole を使う" \
@@ -280,6 +293,8 @@ C20=$(find src/config -name '*.ts' -print0 2>/dev/null | xargs -0 awk "$AWK_COMM
 ' 2>/dev/null || true)
 fail_print "数値定数の宣言元コメントなし（config/）" "宣言行に「何の時間か」を書く（値の根拠があれば併記）" "$C20"
 
+fi # ▲ src/ 依存のチェック（1〜20）ここまで
+
 echo "── メタ層（.claude/ の健全性） ──"
 
 if [ -d .claude/rules ]; then
@@ -310,10 +325,15 @@ if [ -d .claude/rules ]; then
   #     ★ BASELINE の引き上げは禁止しない。ただし baseline ファイルの diff に必ず現れるため、
   #       レビューで「なぜ削らずに枠を広げるのか」が必ず議題になる。これが本チェックの本体であり、
   #       別途の例外申請フローは設けない（機構を増やすと形骸化するため）。
+  #     ★ GATE_SCOPE=kit では判定しない。キットは baseline を同梱しない設計であり（凍結は導入先の
+  #       人間の作業）、キットの作者は規範の総量を決める当事者そのもの — キット用の baseline を
+  #       作るとこのチェックの思想と衝突する。増減は rules を触る PR の本文に実測値で書く。
   BASELINE_FILE=".claude/rules-baseline"
   RULES_BASELINE=$(grep -oE '[0-9]+' "$BASELINE_FILE" 2>/dev/null | head -1 || true)
   RULES_TOTAL=$(find .claude/rules -name '*.md' -exec cat {} + 2>/dev/null | wc -c | tr -d ' ')
-  if [ -z "$RULES_BASELINE" ]; then
+  if [ "$GATE_SCOPE" = kit ]; then
+    echo "➖ Rules 常時ロード総量: ${RULES_TOTAL}B（GATE_SCOPE=kit では判定しない — キットは baseline を同梱しない）"
+  elif [ -z "$RULES_BASELINE" ]; then
     BASELINE_MSG="初回セットアップ: 現在の実測値で ${BASELINE_FILE} を作成して凍結してください（人間が実行: echo ${RULES_TOTAL} > ${BASELINE_FILE}。AI エージェントは作成しない — gate.sh 内★コメント参照）"
     if [ "${GATE_CALLER:-}" = "stop-hook" ]; then
       echo "⚠️  Rules 常時ロード総量: baseline 未設定（${BASELINE_MSG}）"
@@ -330,7 +350,7 @@ if [ -d .claude/rules ]; then
     echo "✅ Rules 常時ロード総量: ${RULES_TOTAL}B / ${RULES_BASELINE}B（残 $((RULES_BASELINE - RULES_TOTAL))B）"
   fi
 
-  # 22. Skill 間参照の健全性（違反 = ①他 SKILL.md への §N 参照 ②裸のサブファイル名 ③リンク切れ）
+  # 22. Skill 間参照の健全性（違反 = ①他 SKILL.md・rules への §N 参照 ②裸のサブファイル名 ③リンク切れ）
   #     有害軸は「ロード単位の粒度と同期負荷」:
   #       ◎ サブファイルへのフルパス参照（dir 跨ぎ可）— 必要な独立単位だけ読める。
   #         パスは § 番号より安定し、実在を ③ で機械検証できる
@@ -341,6 +361,11 @@ if [ -d .claude/rules ]; then
   #     §番号・ファイルパスを伴わないため非検出。
   #     rules → skills の参照も対象外 — rules は常時ロード・skills はフェーズロードなので
   #     「原則は rules・詳細は参照先」の二層化はむしろ標準形。
+  #     逆向きの skills → rules の §N 参照（`locator-principles.md §1` 型）は ① で検出する。
+  #     rules は常時ロード済みなのでロード粒度の問題はないが、§N が黙って振れる点は同じ
+  #     （#31 で番号付きリストの項目が消え、参照先が別の原則に化けた）。節名（見出し）で参照する。
+  #     対象の rules 名は .claude/rules/ の実ファイルから組み立てる（導入先で rules を足しても追随する）
+  RULES_ALT=$(find .claude/rules -maxdepth 1 -name '*.md' -exec basename {} .md \; 2>/dev/null | sort | paste -sd'|' -)
   C22=$({
     for f in .claude/skills/*/*.md; do
       [ -e "$f" ] || continue
@@ -351,6 +376,14 @@ if [ -d .claude/rules ]; then
         while IFS=: read -r ln m; do
           tgt=${m%%[\`/ ]*}
           [ "$tgt" != "$d" ] && echo "${f#.claude/skills/}:${ln}: ${m}"
+        done
+      #   rules への §N 参照（rules は skill ではないので自 dir の除外はない）
+      #   左境界（my-locator-principles.md を拾わない）は ASCII クラスで書く — [:alnum:] は UTF-8
+      #   ロケールで日本語の文字を含み、「詳細はlocator-principles.md §1」を取りこぼす
+      [ -n "$RULES_ALT" ] && grep -noE "(^|[^A-Za-z0-9_-])(${RULES_ALT})(\.md)?\`?[[:space:]]*§[0-9]+" "$f" 2>/dev/null |
+        while IFS=: read -r ln m; do
+          m=${m#"${m%%[A-Za-z0-9_-]*}"}  # 境界の1文字（マルチバイト可）を落とす
+          echo "${f#.claude/skills/}:${ln}: ${m}（rules への §N 参照 — 節名で参照する）"
         done
 
       # ② 裸のサブファイル名（dir 接頭辞がない dir 跨ぎ参照）。
@@ -372,7 +405,7 @@ if [ -d .claude/rules ]; then
   #   dedup は完全重複行のみ（sort | uniq）。同一行に異なる違反（例: §N 参照とリンク切れの
   #   並記）が共存しても両方表示される（file:line キーの sort -u は片方を隠す）
   } 2>/dev/null | sort -t: -k1,1 -k2,2n | uniq || true)
-  fail_print "Skill 間参照の違反（§N 跨ぎ・裸参照・リンク切れ）" "共有正本をサブファイル化しフルパス参照に置き換える（サブファイルへのフルパス参照は dir 跨ぎでも許容）" "$C22"
+  fail_print "Skill 間参照の違反（§N 跨ぎ・裸参照・リンク切れ）" "共有正本をサブファイル化しフルパス参照に置き換える（サブファイルへのフルパス参照は dir 跨ぎでも許容）。rules への §N 参照は節名で参照する" "$C22"
 
   # 23. SKILL.md 単体のサイズ（20,480B 超過で ❌）
   #     しきい値は W6（rules ファイル単体）と同一であることが要件 — rules ↔ skills の移送で
@@ -414,6 +447,9 @@ else
   WARN=1
 fi
 
+# ▼ src/ 依存の警告と tsc。GATE_SCOPE=kit では丸ごと飛ばす（本文をインデントしない理由は 1〜20 と同じ）
+if [ "$GATE_SCOPE" = all ]; then
+
 echo "── 警告（要目視・exit code に影響しない） ──"
 
 # W1. Page Object の waitForTimeout
@@ -453,6 +489,8 @@ else
   echo "❌ tsc → 型エラー（未使用 import / 変数含む）を解消する"
   FAIL=1
 fi
+
+fi # ▲ src/ 依存の警告と tsc ここまで
 
 echo "━━ 結果 ━━"
 if [ "$FAIL" -eq 1 ]; then
