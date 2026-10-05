@@ -361,38 +361,40 @@ if [ -d .claude/rules ]; then
   #     §番号・ファイルパスを伴わないため非検出。
   #     rules → skills の参照も対象外 — rules は常時ロード・skills はフェーズロードなので
   #     「原則は rules・詳細は参照先」の二層化はむしろ標準形。
-  #     逆向きの skills → rules の §N 参照（`locator-principles.md §1` 型）は ① で検出する。
-  #     rules は常時ロード済みなのでロード粒度の問題はないが、§N が黙って振れる点は同じ
-  #     （#31 で番号付きリストの項目が消え、参照先が別の原則に化けた）。節名（見出し）で参照する。
-  #     対象の rules 名は .claude/rules/ の実ファイルから組み立てる（導入先で rules を足しても追随する）
+  #     skills → rules の §N 参照は ① で検出する（§N は節の増減で黙って振れる。節名で参照する）。
+  #     rules 名は .claude/rules/ の実ファイルから組み立てる
   RULES_ALT=$(find .claude/rules -maxdepth 1 -name '*.md' -exec basename {} .md \; 2>/dev/null | sort | paste -sd'|' -)
+  #     ① で名前と §N の間に許す書き方: バッククォート・空白・「の」・「（」、§ と数字の間の空白。
+  #     列挙で書く（「名前の近くの §」のように緩めると別の文の § まで拾う）
+  REF_SEP="\`?[[:space:]]*(の[[:space:]]*|（)?§[[:space:]]*[0-9]+"
   C22=$({
     for f in .claude/skills/*/*.md; do
       [ -e "$f" ] || continue
       d=$(basename "$(dirname "$f")")
 
-      # ① 他 SKILL.md 本文への §N 参照（`e2e-test-create` §9 型）
-      grep -noE "e2e-[a-z-]+\`?[[:space:]]*§[0-9]+" "$f" 2>/dev/null |
+      # ① 他 SKILL.md 本文への §N 参照（`e2e-test-create` §9 型・`e2e-review/SKILL.md §3` 型）
+      #   参照先 dir は英小文字・数字・ハイフンの並びで切り出す（直後が「の」「§」でも切れる）
+      grep -noE "e2e-[a-z-]+(/SKILL\.md)?${REF_SEP}" "$f" 2>/dev/null |
         while IFS=: read -r ln m; do
-          tgt=${m%%[\`/ ]*}
+          tgt=${m%%[![:lower:][:digit:]-]*}
           [ "$tgt" != "$d" ] && echo "${f#.claude/skills/}:${ln}: ${m}"
         done
       #   rules への §N 参照（rules は skill ではないので自 dir の除外はない）
-      #   左境界（my-locator-principles.md を拾わない）は ASCII クラスで書く — [:alnum:] は UTF-8
-      #   ロケールで日本語の文字を含み、「詳細はlocator-principles.md §1」を取りこぼす
-      [ -n "$RULES_ALT" ] && grep -noE "(^|[^A-Za-z0-9_-])(${RULES_ALT})(\.md)?\`?[[:space:]]*§[0-9]+" "$f" 2>/dev/null |
+      #   左境界は ASCII クラスで書く（[:alnum:] は UTF-8 ロケールで日本語を含み、日本語の直後の参照を見逃す）
+      [ -n "$RULES_ALT" ] && grep -noE "(^|[^A-Za-z0-9_-])(${RULES_ALT})(\.md)?${REF_SEP}" "$f" 2>/dev/null |
         while IFS=: read -r ln m; do
           m=${m#"${m%%[A-Za-z0-9_-]*}"}  # 境界の1文字（マルチバイト可）を落とす
           echo "${f#.claude/skills/}:${ln}: ${m}（rules への §N 参照 — 節名で参照する）"
         done
 
       # ② 裸のサブファイル名（dir 接頭辞がない dir 跨ぎ参照）。
-      #    直前が `/` はフルパス参照（許容。実在は ③ が検証）なので除外する
+      #    直前が `/` はフルパス参照（許容。実在は ③ が検証）なので除外する。
+      #    左境界は ASCII クラス（理由は rules 参照と同じ）
       for sub in .claude/skills/*/*.md; do
         sb=$(basename "$sub")
         [ "$sb" = "SKILL.md" ] && continue
         [ "$(basename "$(dirname "$sub")")" = "$d" ] && continue
-        grep -noE "(^|[^/[:alnum:]_-])${sb%.md}\.md" "$f" 2>/dev/null |
+        grep -noE "(^|[^/A-Za-z0-9_-])${sb%.md}\.md" "$f" 2>/dev/null |
           while IFS=: read -r ln _; do echo "${f#.claude/skills/}:${ln}: ${sb}（裸参照 — フルパス化）"; done
       done
 

@@ -406,29 +406,31 @@ if [ -d .claude/rules ]; then
   #     rules → skills references are also out of scope — rules are always loaded
   #     and skills are phase-loaded, so the two-tier "principles in rules, details
   #     at the reference target" is in fact the standard shape.
-  #     The opposite direction, skills → rules §N references (the `locator-principles.md §1`
-  #     form), is detected by ①. Rules are already loaded, so load granularity is not the
-  #     issue, but § numbers shift silently all the same (in #31 a numbered-list item was
-  #     removed and the reference turned into a different principle). Refer by section name.
-  #     The rules names are built from the actual files in .claude/rules/ (so the check
-  #     follows when an adopter adds rules)
+  #     skills → rules §N references are detected by ① (§ numbers shift silently when
+  #     sections change; refer by section name). Rules names come from .claude/rules/
   RULES_ALT=$(find .claude/rules -maxdepth 1 -name '*.md' -exec basename {} .md \; 2>/dev/null | sort | paste -sd'|' -)
+  #     Allowed between the name and §N in ①: a backtick, whitespace, "の", "（", and
+  #     whitespace between § and the number. Enumerated on purpose (a looser "§ near the
+  #     name" would pick up a § from another sentence)
+  REF_SEP="\`?[[:space:]]*(の[[:space:]]*|（)?§[[:space:]]*[0-9]+"
   C22=$({
     for f in .claude/skills/*/*.md; do
       [ -e "$f" ] || continue
       d=$(basename "$(dirname "$f")")
 
-      # ① §N references into another SKILL.md body (the `e2e-test-create` §9 form)
-      grep -noE "e2e-[a-z-]+\`?[[:space:]]*§[0-9]+" "$f" 2>/dev/null |
+      # ① §N references into another SKILL.md body (the `e2e-test-create` §9 and
+      #   `e2e-review/SKILL.md §3` forms)
+      #   The target dir is the leading run of lowercase letters, digits and hyphens
+      #   (so it is cut correctly even when "の" or "§" follows directly)
+      grep -noE "e2e-[a-z-]+(/SKILL\.md)?${REF_SEP}" "$f" 2>/dev/null |
         while IFS=: read -r ln m; do
-          tgt=${m%%[\`/ ]*}
+          tgt=${m%%[![:lower:][:digit:]-]*}
           [ "$tgt" != "$d" ] && echo "${f#.claude/skills/}:${ln}: ${m}"
         done
       #   §N references into rules (rules are not skills, so there is no own-dir exemption)
-      #   The left boundary (so my-locator-principles.md does not match) is an ASCII class —
-      #   [:alnum:] includes Japanese characters under UTF-8 locales and would miss
-      #   "詳細はlocator-principles.md §1"
-      [ -n "$RULES_ALT" ] && grep -noE "(^|[^A-Za-z0-9_-])(${RULES_ALT})(\.md)?\`?[[:space:]]*§[0-9]+" "$f" 2>/dev/null |
+      #   The left boundary is an ASCII class ([:alnum:] includes Japanese under UTF-8
+      #   locales and would miss a reference written right after Japanese text)
+      [ -n "$RULES_ALT" ] && grep -noE "(^|[^A-Za-z0-9_-])(${RULES_ALT})(\.md)?${REF_SEP}" "$f" 2>/dev/null |
         while IFS=: read -r ln m; do
           m=${m#"${m%%[A-Za-z0-9_-]*}"}  # drop the boundary character (may be multibyte)
           echo "${f#.claude/skills/}:${ln}: ${m} (§N reference into rules — refer by section name)"
@@ -436,12 +438,13 @@ if [ -d .claude/rules ]; then
 
       # ② bare sub-file names (cross-dir references missing the dir prefix).
       #    A preceding `/` means a full-path reference (allowed; ③ verifies
-      #    existence), so exclude it
+      #    existence), so exclude it. The left boundary is an ASCII class (same
+      #    reason as for rules references)
       for sub in .claude/skills/*/*.md; do
         sb=$(basename "$sub")
         [ "$sb" = "SKILL.md" ] && continue
         [ "$(basename "$(dirname "$sub")")" = "$d" ] && continue
-        grep -noE "(^|[^/[:alnum:]_-])${sb%.md}\.md" "$f" 2>/dev/null |
+        grep -noE "(^|[^/A-Za-z0-9_-])${sb%.md}\.md" "$f" 2>/dev/null |
           while IFS=: read -r ln _; do echo "${f#.claude/skills/}:${ln}: ${sb} (bare reference — use the full path)"; done
       done
 
