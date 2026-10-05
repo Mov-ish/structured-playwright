@@ -362,11 +362,12 @@ if [ -d .claude/rules ]; then
   #     rules → skills の参照も対象外 — rules は常時ロード・skills はフェーズロードなので
   #     「原則は rules・詳細は参照先」の二層化はむしろ標準形。
   #     skills → rules の §N 参照は ① で検出する（§N は節の増減で黙って振れる。節名で参照する）。
-  #     rules 名は .claude/rules/ の実ファイルから組み立てる
+  #     rules 名は .claude/rules/ の実ファイルから組み立てる（導入先で rules を足しても追随する）
   RULES_ALT=$(find .claude/rules -maxdepth 1 -name '*.md' -exec basename {} .md \; 2>/dev/null | sort | paste -sd'|' -)
-  #     ① で名前と §N の間に許す書き方: バッククォート・空白・「の」・「（」、§ と数字の間の空白。
-  #     列挙で書く（「名前の近くの §」のように緩めると別の文の § まで拾う）
-  REF_SEP="\`?[[:space:]]*(の[[:space:]]*|（)?§[[:space:]]*[0-9]+"
+  #     ① で名前と §N の間に許す書き方: バッククォート・空白・「の」・全角／半角の括弧、§ と数字の間の空白。
+  #     列挙で書く（「名前の近くの §」のように緩めると別の文の § まで拾う）。括弧は文字クラスにしない
+  #     （C ロケールでは全角文字がバイト単位に分かれる）
+  REF_SEP="\`?[[:space:]]*(の[[:space:]]*|（[[:space:]]*|\([[:space:]]*)?§[[:space:]]*[0-9]+"
   C22=$({
     for f in .claude/skills/*/*.md; do
       [ -e "$f" ] || continue
