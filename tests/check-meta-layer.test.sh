@@ -9,12 +9,8 @@
 #
 # 検証する 3 ケース（for-claude-code / for-claude-code-en の両方）:
 #   1. キットが clean — exit 0 かつ ⚠️ なし（キットは導入先がコピーする雛形なので警告も残さない）
-#   2. skills → rules の §N 参照を検出する — 一時コピーに次の3行を注入し、exit 1 と報告内容を確認
-#      a. #31 ですり抜けた形（`locator-principles.md` §1）→ 検出
-#      b. 日本語の直後に書いた形（詳細はlocator-principles.md §2）→ 検出
-#         （UTF-8 ロケールでは日本語が [:alnum:] に入るため、左境界の書き方次第で取りこぼす。
-#           その条件を確実に作るため LC_ALL=C.UTF-8 で走らせる）
-#      c. 名前が rules 名で終わる別名（my-locator-principles.md §3）→ 検出しない
+#   2. チェック 22 の ①② を書き方ごとに検査する — CASE2_ROWS を一時コピーに注入し、行ごとの報告を照合。
+#      日本語の扱いがロケールで変わるため LC_ALL=C.UTF-8 と C の両方で走らせる（#51）
 #   3. cwd ガード — .claude/rules の無い場所で GATE_SCOPE=kit は exit 1（偽 ✅ を出さない）
 #
 # 検証しないこと: チェック 21（rules 総量ラチェット）。キットは baseline を同梱しない設計で、
@@ -48,33 +44,61 @@ for kit in "${KITS[@]}"; do
   fi
 done
 
-# --- ケース 2: skills → rules の §N 参照を検出する --------------------------------
-# 注入先は skills のサブファイル。行番号まで一致することを見る（検出の有無だけでなく位置も）
+# --- ケース 2: §N 参照・裸参照の検出（書き方ごと） ----------------------------------
+# 1 行 = 「注入する文|その行の file:line に続く報告」（- は報告なし）。注入先は e2e-locator のサブファイル
+CASE2_ROWS=(
+  # rules への §N 参照
+  '`locator-principles.md` §1|locator-principles.md` §1'          # #31 ですり抜けた形
+  '詳細はlocator-principles.md §2|locator-principles.md §2'       # 日本語の直後
+  'my-locator-principles.md §3|-'                                 # 名前が rules 名で終わる別名
+  '`locator-principles.md` の §4|locator-principles.md` の §4'
+  'locator-principles.md（§5）|locator-principles.md（§5'
+  # 他 SKILL.md への §N 参照
+  '`e2e-review` の §3|e2e-review` の §3'
+  'e2e-reviewの§3|e2e-reviewの§3'
+  'e2e-review（§3）|e2e-review（§3'
+  'e2e-review/SKILL.md §3|e2e-review/SKILL.md §3'
+  '`e2e-review` § 3|e2e-review` § 3'
+  # 自 dir（e2e-locator）への §N 参照は許容
+  'e2e-locator（§2）|-'
+  'e2e-locator§2|-'
+  '`e2e-locator` の §2|-'
+  'e2e-locator/SKILL.md §2|-'
+  # 裸のサブファイル名（日本語の直後）
+  '詳細はtest-data-management.md を参照|test-data-management.md'
+)
+target=".claude/skills/e2e-locator/ant-design-tabs-disabled.md"
 for kit in "${KITS[@]}"; do
   dst="$WORK/$kit"
   mkdir -p "$dst"
   cp -r "$ROOT/$kit/.claude" "$dst/.claude"
-  target=".claude/skills/e2e-locator/ant-design-tabs-disabled.md"
-  printf -- '- `locator-principles.md` §1 injected by check-meta-layer.test.sh\n' >> "$dst/$target"
-  line=$(wc -l < "$dst/$target" | tr -d ' ')
-  printf -- '- 詳細はlocator-principles.md §2 injected by check-meta-layer.test.sh\n' >> "$dst/$target"
-  printf -- '- my-locator-principles.md §3 injected by check-meta-layer.test.sh\n' >> "$dst/$target"
-  set +e
-  OUT=$(cd "$dst" && LC_ALL=C.UTF-8 GATE_SCOPE=kit bash "$ROOT/$kit/scripts/gate.sh" 2>&1)
-  STATUS=$?
-  set -e
-  # a〜c は 1 つでも外れたらケース全体を fail にする（偽 ✅ を出さない）
-  ok=1
-  [ "$STATUS" -eq 1 ] || ok=0
-  printf '%s\n' "$OUT" | grep -qF "e2e-locator/ant-design-tabs-disabled.md:${line}: locator-principles.md\` §1" || ok=0
-  printf '%s\n' "$OUT" | grep -qF "e2e-locator/ant-design-tabs-disabled.md:$((line + 1)): locator-principles.md §2" || ok=0
-  if printf '%s\n' "$OUT" | grep -qF "§3"; then ok=0; fi
-  if [ "$ok" -eq 1 ]; then
-    pass "ケース2: ${kit} で skills → rules の §N 参照を検出（exit 1・行 ${line}〜$((line + 1))。別名は非検出）"
-  else
-    printf '%s\n' "$OUT"
-    fail "ケース2: ${kit} の §N 参照の検出結果が期待と違う（exit ${STATUS}。上記出力）"
-  fi
+  first=$(( $(wc -l < "$dst/$target" | tr -d ' ') + 1 ))
+  for row in "${CASE2_ROWS[@]}"; do printf -- '- %s\n' "${row%%|*}" >> "$dst/$target"; done
+  for loc in C.UTF-8 C; do
+    set +e
+    OUT=$(cd "$dst" && LC_ALL=$loc GATE_SCOPE=kit bash "$ROOT/$kit/scripts/gate.sh" 2>&1)
+    STATUS=$?
+    set -e
+    bad=""
+    [ "$STATUS" -eq 1 ] || bad="exit ${STATUS}（1 を期待）"
+    ln=$first
+    for row in "${CASE2_ROWS[@]}"; do
+      want=${row#*|}
+      key="e2e-locator/ant-design-tabs-disabled.md:${ln}: "
+      if [ "$want" = "-" ]; then
+        printf '%s\n' "$OUT" | grep -qF "$key" && bad="${bad} / 行${ln}「${row%%|*}」が報告された"
+      else
+        printf '%s\n' "$OUT" | grep -qF "${key}${want}" || bad="${bad} / 行${ln}「${row%%|*}」が期待どおり報告されない"
+      fi
+      ln=$((ln + 1))
+    done
+    if [ -z "$bad" ]; then
+      pass "ケース2: ${kit}（LC_ALL=${loc}）で ${#CASE2_ROWS[@]} 通りの書き方がすべて期待どおり"
+    else
+      printf '%s\n' "$OUT"
+      fail "ケース2: ${kit}（LC_ALL=${loc}）— ${bad#" / "}"
+    fi
+  done
 done
 
 # --- ケース 3: cwd ガード -------------------------------------------------------------
